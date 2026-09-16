@@ -3,10 +3,11 @@ import json
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template  # render_template eklendi
 import requests
 
-app = Flask(__name__)
+# template_folder="." ile index.html dosyasını doğrudan proje kök dizininden okur
+app = Flask(__name__, template_folder=".")
 
 # Firebase Baglantisi (Bulut ve Yerel Uyumlu)
 if os.environ.get("FIREBASE_KEY"):
@@ -41,7 +42,8 @@ def send_whatsapp(message_text):
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Ödev Hatırlatıcı Servisi Çalışıyor!"
+    # Ana sayfaya girildiğinde index.html arayüzünü gösterir
+    return render_template("index.html")
 
 
 @app.route("/check-assignments", methods=["GET"])
@@ -60,7 +62,7 @@ def check_assignments():
         teslim_tarihi = data.get("teslim_tarihi")
 
         # Zamanı gelmiş veya geçmişse WhatsApp mesajı at
-        if teslim_tarihi <= now_str:
+        if teslim_tarihi and teslim_tarihi <= now_str:
             mesaj = (
                 f"🚨 *ÖDEV HATIRLATMASI!*\n\n"
                 f"📚 *Ödev:* {data.get('baslik')}\n"
