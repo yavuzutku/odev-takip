@@ -48,7 +48,10 @@
     document.getElementById("odevForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const odevAdi = document.getElementById("odevAdi").value;
-      const teslimTarihi = document.getElementById("teslimTarihi").value;
+      const teslimTarihiLocal = document.getElementById("teslimTarihi").value;
+      // datetime-local input'u tarayıcının yerel saatine göre gelir; sunucu (Render)
+      // UTC karşılaştırması yaptığı için burada UTC'ye çevirip kaydediyoruz.
+      const teslimTarihi = new Date(teslimTarihiLocal).toISOString().slice(0, 16);
 
       try {
         await addDoc(collection(db, "odevler"), {
