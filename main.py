@@ -57,6 +57,8 @@ def check_assignments():
 
     gonderilen_sayisi = 0
 
+    hatalar = []
+
     for doc in query:
         data = doc.to_dict()
         teslim_tarihi = data.get("teslim_tarihi")
@@ -75,8 +77,10 @@ def check_assignments():
                 # Tekrar tekrar mesaj atmaması için 'gonderildi' durumunu True yap
                 odevler_ref.document(doc.id).update({"gonderildi": True})
                 gonderilen_sayisi += 1
+            else:
+                hatalar.append({"doc_id": doc.id, "status": res.status_code, "detay": res.text})
 
-    return jsonify({"status": "ok", "gonderilen_bildirim": gonderilen_sayisi})
+    return jsonify({"status": "ok", "gonderilen_bildirim": gonderilen_sayisi, "hatalar": hatalar})
 
 
 if __name__ == "__main__":
