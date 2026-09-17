@@ -3,13 +3,11 @@ import json
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore
-from flask import Flask, jsonify, render_template  # render_template eklendi
+from flask import Flask, jsonify, render_template, request
 import requests
 
-# template_folder="." ile index.html dosyasını doğrudan proje kök dizininden okur
 app = Flask(__name__, template_folder=".")
 
-# Firebase Baglantisi (Bulut ve Yerel Uyumlu)
 if os.environ.get("FIREBASE_KEY"):
     cred_json = json.loads(os.environ.get("FIREBASE_KEY"))
     cred = credentials.Certificate(cred_json)
@@ -19,13 +17,16 @@ else:
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# WhatsApp API Bilgilerin (token Render env variable'ından okunuyor)
 ACCESS_TOKEN = os.environ.get("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = "1327842940416253"
 RECIPIENT_PHONE = "905060308430"
+VERIFY_TOKEN = os.environ.get("WEBHOOK_VERIFY_TOKEN", "odevtakip123")
 
 if not ACCESS_TOKEN:
     raise RuntimeError("WHATSAPP_TOKEN environment variable eksik!")
+
+ZAMAN_FORMAT = "%Y-%m-%dT%H:%M"
+ZAMAN_FORMAT_SANIYE = "%Y-%m-%dT%H:%M:%S"
 
 
 def send_whatsapp(message_text):
@@ -43,8 +44,39 @@ def send_whatsapp(message_text):
     return requests.post(url, headers=headers, json=payload)
 
 
+def send_whatsapp_interactive(message_text, doc_id):
+    """Tamamlandı butonlu mesaj gönderir."""
+    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": RECIPIENT_PHONE,
+        "type": "interactive",
+        "interactive": {
+            "type": "button",
+            "body": {"text": message_text},
+            "action": {
+                "buttons": [
+                    {
+                        "type": "reply",
+                        "reply": {"id": f"done_{doc_id}", "title": "✅ Tamamlandı"},
+                    }
+                ]
+            },
+        },
+    }
+    res = requests.post(url, headers=headers, json=payload)
+    if res.status_code != 200:
+        # Interactive başarısız olursa düz metin dene (ör. 24 saat penceresi dışıysa)
+        print(f"Interactive gönderim hatası: {res.status_code} {res.text}")
+        return send_whatsapp(message_text)
+    return res
+
+
 def sure_metni(dakika):
-    """Kalan süreyi okunabilir Türkçe metne çevirir."""
     if dakika <= 0:
         return "Teslim zamanı geldi!"
     if dakika < 60:
@@ -56,32 +88,118 @@ def sure_metni(dakika):
     return f"{gun} gün kaldı"
 
 
-def mesaj_olustur(data, dakika):
-    return (
-        f"🚨 *ÖDEV HATIRLATMASI!*\n\n"
-        f"📚 *Ödev:* {data.get('baslik')}\n"
-        f"📖 *Ders:* {data.get('ders') or '-'}\n"
-        f"⏰ *{sure_metni(dakika)}*\n"
-        f"🗓️ *Teslim:* {data.get('teslim_tarihi')}\n\n"
-        f"Lütfen ödevini kontrol etmeyi unutma!"
+def mesaj_olustur(data, dakika, tekrar=False):
+    baslik = "🔁 *HATIRLATMA (tekrar)*" if tekrar else "🚨 *ÖDEV HATIRLATMASI!*"
+    satirlar = [
+        baslik,
+        "",
+        f"📚 *Ödev:* {data.get('baslik')}",
+        f"📖 *Ders:* {data.get('ders') or '-'}",
+    ]
+    if data.get("notlar"):
+        satirlar.append(f"📝 *Not:* {data.get('notlar')}")
+    satirlar.append(f"⏰ *{sure_metni(dakika)}*")
+    satirlar.append(f"🗓️ *Teslim:* {data.get('teslim_tarihi')}")
+    satirlar.append("")
+    satirlar.append("Tamamladıysan aşağıdaki butona bas 👇")
+    return "\n".join(satirlar)
+
+
+def liste_metni(baslik, docs):
+    docs = list(docs)
+    if not docs:
+        return f"{baslik}\n\nÖdev bulunamadı 🎉"
+    satirlar = [baslik, ""]
+    for d in docs:
+        v = d.to_dict()
+        durum = "✅" if v.get("tamamlandi") else "🔲"
+        satirlar.append(f"{durum} *{v.get('baslik')}* ({v.get('ders') or '-'})")
+        if v.get("notlar"):
+            satirlar.append(f"   📝 {v.get('notlar')}")
+        satirlar.append(f"   ⏰ {v.get('teslim_tarihi')}")
+        satirlar.append("")
+    return "\n".join(satirlar).strip()
+
+
+def gunluk_liste_gonder():
+    now = datetime.utcnow()
+    start = now.strftime("%Y-%m-%dT00:00")
+    end = now.strftime("%Y-%m-%dT23:59")
+    docs = (
+        db.collection("odevler")
+        .where("teslim_tarihi", ">=", start)
+        .where("teslim_tarihi", "<=", end)
+        .stream()
     )
+    send_whatsapp(liste_metni("📅 *Bugünkü Ödevler*", docs))
+
+
+def haftalik_liste_gonder():
+    now = datetime.utcnow()
+    end_dt = now + timedelta(days=7)
+    start = now.strftime(ZAMAN_FORMAT)
+    end = end_dt.strftime(ZAMAN_FORMAT)
+    docs = (
+        db.collection("odevler")
+        .where("teslim_tarihi", ">=", start)
+        .where("teslim_tarihi", "<=", end)
+        .stream()
+    )
+    send_whatsapp(liste_metni("🗓️ *Bu Haftaki Ödevler*", docs))
 
 
 @app.route("/", methods=["GET"])
 def home():
-    # Ana sayfaya girildiğinde index.html arayüzünü gösterir
     return render_template("index.html")
+
+
+@app.route("/webhook", methods=["GET"])
+def webhook_verify():
+    mode = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge")
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        return challenge, 200
+    return "Forbidden", 403
+
+
+@app.route("/webhook", methods=["POST"])
+def webhook_receive():
+    data = request.get_json(silent=True) or {}
+    try:
+        entry = data["entry"][0]["changes"][0]["value"]
+        messages = entry.get("messages")
+        if not messages:
+            return jsonify({"status": "ignored"}), 200
+        msg = messages[0]
+
+        if msg.get("type") == "interactive":
+            btn = msg.get("interactive", {}).get("button_reply", {})
+            btn_id = btn.get("id", "")
+            if btn_id.startswith("done_"):
+                doc_id = btn_id[len("done_"):]
+                db.collection("odevler").document(doc_id).update({"tamamlandi": True})
+                send_whatsapp("✅ Ödev tamamlandı olarak işaretlendi, hatırlatmalar durduruldu.")
+
+        elif msg.get("type") == "text":
+            text = msg.get("text", {}).get("body", "").strip().lower()
+            text = text.replace("ü", "u").replace("ğ", "g")
+            if text in ("gun", "bugün", "bugun"):
+                gunluk_liste_gonder()
+            elif text == "hafta":
+                haftalik_liste_gonder()
+
+    except Exception as e:
+        print(f"Webhook işleme hatası: {e}")
+
+    return jsonify({"status": "ok"}), 200
 
 
 @app.route("/check-assignments", methods=["GET"])
 def check_assignments():
     now = datetime.utcnow()
-    now_str = now.strftime("%Y-%m-%dT%H:%M")
+    now_str = now.strftime(ZAMAN_FORMAT)
     odevler_ref = db.collection("odevler")
-
-    # Artık her ödevin birden çok hatırlatma zamanı olabildiği için
-    # tamamlanmamış tüm ödevleri çekip her birinin hatırlatma listesini
-    # kendimiz kontrol ediyoruz.
     docs = odevler_ref.stream()
 
     gonderilen_sayisi = 0
@@ -97,14 +215,14 @@ def check_assignments():
             continue
 
         try:
-            teslim_dt = datetime.strptime(teslim_tarihi, "%Y-%m-%dT%H:%M")
+            teslim_dt = datetime.strptime(teslim_tarihi, ZAMAN_FORMAT)
         except ValueError:
             continue
 
         hatirlatmalar = data.get("hatirlatmalar")
+        ilk_gonderim_bu_turda = False
 
         if hatirlatmalar:
-            # Yeni format: her biri {"dk": <teslimden kaç dk önce>, "gonderildi": bool}
             yeni_liste = []
             degisti = False
             for h in hatirlatmalar:
@@ -112,25 +230,56 @@ def check_assignments():
                 if not h.get("gonderildi"):
                     tetik_zamani = teslim_dt - timedelta(minutes=dk)
                     if tetik_zamani <= now:
-                        res = send_whatsapp(mesaj_olustur(data, dk))
+                        res = send_whatsapp_interactive(mesaj_olustur(data, dk), d.id)
                         if res.status_code == 200:
                             h = {"dk": dk, "gonderildi": True}
                             degisti = True
                             gonderilen_sayisi += 1
+                            ilk_gonderim_bu_turda = True
                         else:
                             print(f"WhatsApp gönderim hatası ({d.id}, {dk} dk): {res.status_code} {res.text}")
                 yeni_liste.append(h)
             if degisti:
-                odevler_ref.document(d.id).update({"hatirlatmalar": yeni_liste})
+                odevler_ref.document(d.id).update(
+                    {"hatirlatmalar": yeni_liste, "son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
+                )
         else:
-            # Eski kayıtlar (hatirlatmalar alanı yok): geriye dönük tek seferlik hatırlatma
             if not data.get("gonderildi") and teslim_tarihi <= now_str:
-                res = send_whatsapp(mesaj_olustur(data, 0))
+                res = send_whatsapp_interactive(mesaj_olustur(data, 0), d.id)
                 if res.status_code == 200:
-                    odevler_ref.document(d.id).update({"gonderildi": True})
+                    odevler_ref.document(d.id).update(
+                        {"gonderildi": True, "son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
+                    )
                     gonderilen_sayisi += 1
+                    ilk_gonderim_bu_turda = True
                 else:
                     print(f"WhatsApp gönderim hatası ({d.id}): {res.status_code} {res.text}")
+
+        # 30 dakikada bir tekrar hatırlatma (ilk mesaj daha önce gitmiş ve tamamlanmamışsa)
+        if not ilk_gonderim_bu_turda:
+            daha_once_gonderildi = data.get("gonderildi") or any(
+                h.get("gonderildi") for h in (hatirlatmalar or [])
+            )
+            if daha_once_gonderildi:
+                son = data.get("son_hatirlatma")
+                tekrar_gerekli = True
+                if son:
+                    try:
+                        son_dt = datetime.strptime(son, ZAMAN_FORMAT_SANIYE)
+                        if now - son_dt < timedelta(minutes=30):
+                            tekrar_gerekli = False
+                    except ValueError:
+                        pass
+                if tekrar_gerekli:
+                    kalan_dk = int((teslim_dt - now).total_seconds() // 60)
+                    res = send_whatsapp_interactive(mesaj_olustur(data, kalan_dk, tekrar=True), d.id)
+                    if res.status_code == 200:
+                        odevler_ref.document(d.id).update(
+                            {"son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
+                        )
+                        gonderilen_sayisi += 1
+                    else:
+                        print(f"Tekrar hatırlatma hatası ({d.id}): {res.status_code} {res.text}")
 
     return jsonify({"status": "ok", "gonderilen_bildirim": gonderilen_sayisi})
 
