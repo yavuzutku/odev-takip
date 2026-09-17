@@ -1,71 +1,565 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ödev Takip Paneli</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 420px; margin: 40px auto; padding: 20px; background: #0f172a; color: white; }
-    .card { background: #1e293b; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid #334155; }
-    h2 { margin-top: 0; color: #38bdf8; text-align: center; }
-    label { font-size: 14px; color: #94a3b8; display: block; margin-top: 12px; }
-    input { width: 100%; padding: 12px; margin-top: 6px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; box-sizing: border-box; font-size: 15px; }
-    button { width: 100%; padding: 12px; margin-top: 20px; border-radius: 8px; border: none; background: #22c55e; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
-    button:hover { background: #16a34a; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ödev Takip Paneli</title>
+<style>
+  :root{
+    --bg:#12141c;
+    --bg-soft:#171a24;
+    --surface:#1d212e;
+    --surface-hi:#252a3a;
+    --border:#2a2f42;
+    --border-soft:#20242f;
+    --text:#edeff5;
+    --text-dim:#9298b0;
+    --text-faint:#5c6178;
+    --accent:#5eead4;
+    --accent-ink:#052622;
+    --danger:#fb7185;
+    --danger-soft:#3a2129;
+    --ring: 0 0 0 3px rgba(94,234,212,0.25);
+    --serif: 'Iowan Old Style','Palatino Linotype','URW Palladio',Georgia,'Times New Roman',serif;
+    --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(94,234,212,0.06), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;margin-bottom:26px;
+  }
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .brand{
+    display:flex;align-items:baseline;gap:10px;
+  }
+  .brand h1{
+    font-family:var(--serif);
+    font-size:26px;font-weight:600;margin:0;letter-spacing:.2px;
+  }
+  .brand span{color:var(--text-faint);font-size:13px;}
+
+  .month-nav{display:flex;align-items:center;gap:6px;}
+  .icon-btn{
+    width:34px;height:34px;border-radius:10px;border:1px solid var(--border);
+    background:var(--surface);color:var(--text-dim);display:flex;align-items:center;
+    justify-content:center;cursor:pointer;transition:background .15s,color .15s,border-color .15s;
+  }
+  .icon-btn:hover{background:var(--surface-hi);color:var(--text);border-color:#333a52;}
+  .month-title{
+    font-family:var(--serif);font-size:19px;min-width:150px;text-align:center;
+    font-weight:600;
+  }
+
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .btn{
+    border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:600;
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);
+    transition:transform .1s, opacity .15s;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-ghost{background:var(--surface);color:var(--text-dim);border:1px solid var(--border);}
+  .btn-ghost:hover{color:var(--text);border-color:#333a52;}
+  .btn-accent{background:var(--accent);color:var(--accent-ink);}
+  .btn-accent:hover{opacity:.9;}
+
+  .layout{display:flex;gap:22px;align-items:flex-start;}
+  .calendar-panel{
+    flex:1.5;background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;padding:18px;min-width:0;
+  }
+  .weekday-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;}
+  .weekday-row div{
+    text-align:center;font-size:11.5px;color:var(--text-faint);
+    text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;
+  }
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-cell{
+    aspect-ratio:1/0.92;border-radius:12px;border:1px solid var(--border-soft);
+    background:var(--bg-soft);padding:8px 8px 6px;display:flex;flex-direction:column;
+    cursor:pointer;transition:background .15s,border-color .15s;position:relative;
+  }
+  .cal-cell:hover{background:var(--surface-hi);border-color:#333a52;}
+  .cal-cell.dim{opacity:.35;}
+  .cal-cell.today{border-color:var(--accent);box-shadow:var(--ring);}
+  .cal-day-num{
+    font-family:var(--serif);font-size:16px;font-weight:600;color:var(--text);
+    line-height:1;
+  }
+  .cal-cell.today .cal-day-num{color:var(--accent);}
+  .cal-cell.has-overdue .cal-day-num{color:var(--danger);}
+  .cal-dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;}
+  .cal-dot{width:6px;height:6px;border-radius:50%;flex:none;}
+  .cal-more{font-size:10px;color:var(--text-faint);}
+
+  .agenda-panel{
+    flex:1;background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;padding:18px 16px;min-width:0;position:sticky;top:20px;
+  }
+  .agenda-group{margin-bottom:18px;}
+  .agenda-group:last-child{margin-bottom:0;}
+  .agenda-label{
+    font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);
+    margin-bottom:8px;display:flex;align-items:center;gap:8px;
+  }
+  .agenda-label.danger{color:var(--danger);}
+  .agenda-empty{font-size:13px;color:var(--text-faint);padding:2px 0 4px;}
+
+  .task{
+    display:flex;align-items:flex-start;gap:10px;padding:9px 8px;border-radius:10px;
+    margin-bottom:2px;transition:background .15s;
+  }
+  .task:hover{background:var(--surface-hi);}
+  .task-bar{width:3px;align-self:stretch;border-radius:2px;flex:none;margin-top:2px;}
+  .task-check{
+    width:18px;height:18px;border-radius:6px;border:1.5px solid var(--border);
+    background:var(--bg-soft);flex:none;margin-top:2px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:var(--accent-ink);
+  }
+  .task-check.checked{background:var(--accent);border-color:var(--accent);}
+  .task-body{flex:1;min-width:0;cursor:pointer;}
+  .task-title{font-size:13.5px;font-weight:600;color:var(--text);line-height:1.35;}
+  .task.done .task-title{color:var(--text-faint);text-decoration:line-through;}
+  .task-meta{font-size:12px;color:var(--text-dim);margin-top:2px;}
+  .task-meta.danger{color:var(--danger);}
+  .task-del{
+    width:24px;height:24px;border:none;background:transparent;color:var(--text-faint);
+    cursor:pointer;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;
+  }
+  .task-del:hover{color:var(--danger);background:var(--danger-soft);}
+
+  .collapse-toggle{
+    display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text-faint);
+    font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;cursor:pointer;padding:0;
+    margin-bottom:8px;font-family:var(--sans);
+  }
+  .collapse-toggle:hover{color:var(--text-dim);}
+  .collapse-toggle svg{transition:transform .15s;}
+  .collapse-toggle.open svg{transform:rotate(90deg);}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(8,9,14,.6);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;
+    opacity:0;pointer-events:none;transition:opacity .15s;
+  }
+  .modal-overlay.open{opacity:1;pointer-events:auto;}
+  .modal{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:22px;width:100%;max-width:400px;
+    transform:translateY(6px) scale(.98);transition:transform .15s;
+  }
+  .modal-overlay.open .modal{transform:translateY(0) scale(1);}
+  .modal h2{font-family:var(--serif);font-size:19px;margin:0 0 16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;}
+  .field input{
+    width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--border);
+    background:var(--bg-soft);color:var(--text);font-size:14px;font-family:var(--sans);
+  }
+  .field input:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring);}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+  .btn-danger-ghost{background:transparent;color:var(--danger);border:1px solid var(--danger-soft);}
+  .btn-danger-ghost:hover{background:var(--danger-soft);}
+
+  @media (max-width:860px){
+    .layout{flex-direction:column;}
+    .agenda-panel{position:static;width:100%;}
+    .cal-cell{aspect-ratio:1/0.75;}
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h2>📚 Ödev Hatırlatıcı</h2>
-    <form id="odevForm">
-      <label>Ödev Adı / Konusu:</label>
-      <input type="text" id="odevAdi" placeholder="Örn: Almanca Konuşma Sınavı" required>
-      
-      <label>Son Teslim Tarihi ve Saati:</label>
-      <input type="datetime-local" id="teslimTarihi" required>
-      
-      <button type="submit">Ödevi Veritabanına Kaydet</button>
-    </form>
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="brand">
+          <h1>Ödev Takip</h1>
+          <span>takvim &amp; ajanda</span>
+        </div>
+      </div>
+      <div class="month-nav">
+        <button class="icon-btn" id="prevMonth" aria-label="Önceki ay">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="month-title" id="monthTitle">—</div>
+        <button class="icon-btn" id="nextMonth" aria-label="Sonraki ay">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost" id="todayBtn">Bugün</button>
+        <button class="btn btn-accent" id="addBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+          Yeni Ödev
+        </button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <section class="calendar-panel">
+        <div class="weekday-row">
+          <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </section>
+
+      <aside class="agenda-panel" id="agendaPanel"></aside>
+    </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">Yeni Ödev</h2>
+      <div class="field">
+        <label for="fBaslik">Ödev / Konu</label>
+        <input type="text" id="fBaslik" placeholder="Örn: Kelime testi" required>
+      </div>
+      <div class="field">
+        <label for="fDers">Ders</label>
+        <input type="text" id="fDers" list="dersListe" placeholder="Örn: Almanca">
+        <datalist id="dersListe"></datalist>
+      </div>
+      <div class="field">
+        <label for="fTarih">Son Teslim Tarihi ve Saati</label>
+        <input type="datetime-local" id="fTarih" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-danger-ghost" id="deleteBtn" style="display:none;">Sil</button>
+        <button class="btn btn-ghost" id="cancelBtn">İptal</button>
+        <button class="btn btn-accent" id="saveBtn">Kaydet</button>
+      </div>
+    </div>
+  </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBmjtKsM358NaSawMYedj68bekuHW3tTuI",
-      authDomain: "odev-takip-b382b.firebaseapp.com",
-      projectId: "odev-takip-b382b",
-      storageBucket: "odev-takip-b382b.firebasestorage.app",
-      messagingSenderId: "589935632574",
-      appId: "1:589935632574:web:a9338b99fca74256ee7eef",
-      measurementId: "G-FEE7RTS3P0"
-    };
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyBmjtKsM358NaSawMYedj68bekuHW3tTuI",
+  authDomain: "odev-takip-b382b.firebaseapp.com",
+  projectId: "odev-takip-b382b",
+  storageBucket: "odev-takip-b382b.firebasestorage.app",
+  messagingSenderId: "589935632574",
+  appId: "1:589935632574:web:a9338b99fca74256ee7eef",
+  measurementId: "G-FEE7RTS3P0"
+};
 
-    document.getElementById("odevForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const odevAdi = document.getElementById("odevAdi").value;
-      const teslimTarihiLocal = document.getElementById("teslimTarihi").value;
-      // datetime-local input'u tarayıcının yerel saatine göre gelir; sunucu (Render)
-      // UTC karşılaştırması yaptığı için burada UTC'ye çevirip kaydediyoruz.
-      const teslimTarihi = new Date(teslimTarihiLocal).toISOString().slice(0, 16);
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const odevlerRef = collection(db, "odevler");
 
-      try {
-        await addDoc(collection(db, "odevler"), {
-          baslik: odevAdi,
-          teslim_tarihi: teslimTarihi,
-          gonderildi: false,
-          olusturulma: new Date().toISOString()
-        });
-        alert("✅ Ödev başarıyla kaydedildi!");
-        document.getElementById("odevForm").reset();
-      } catch (error) {
-        alert("Hata oluştu: " + error.message);
+const PALETTE = ["#f97b6b","#ffb454","#7dd3fc","#c4b5fd","#34d399","#f472b6","#fbbf24","#60a5fa"];
+function colorFor(ders){
+  const s = (ders || "Genel").trim().toLowerCase();
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+let items = [];
+let viewYear, viewMonth;
+let editingId = null;
+
+const today = new Date();
+viewYear = today.getFullYear();
+viewMonth = today.getMonth();
+
+function toLocalDate(utcStr){
+  // teslim_tarihi Firestore'da UTC "YYYY-MM-DDTHH:MM" olarak tutulur
+  return new Date(utcStr + ":00Z");
+}
+function localDayKey(d){
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function nowUtcStr(){
+  return new Date().toISOString().slice(0,16);
+}
+
+function renderMonthTitle(){
+  const ay = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+  document.getElementById("monthTitle").textContent = ay[viewMonth] + " " + viewYear;
+}
+
+function renderCalendar(){
+  renderMonthTitle();
+  const grid = document.getElementById("calGrid");
+  grid.innerHTML = "";
+
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  let startOffset = firstOfMonth.getDay() - 1; // Pazartesi = 0
+  if (startOffset < 0) startOffset = 6;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+  const todayKey = localDayKey(new Date());
+
+  const byDay = {};
+  items.forEach(it => {
+    const d = toLocalDate(it.teslim_tarihi);
+    const key = localDayKey(d);
+    (byDay[key] = byDay[key] || []).push(it);
+  });
+
+  const cells = [];
+  for (let i = startOffset - 1; i >= 0; i--){
+    cells.push({day: daysInPrevMonth - i, dim:true, y:viewMonth===0?viewYear-1:viewYear, m:viewMonth===0?11:viewMonth-1});
+  }
+  for (let d = 1; d <= daysInMonth; d++){
+    cells.push({day:d, dim:false, y:viewYear, m:viewMonth});
+  }
+  while (cells.length % 7 !== 0 || cells.length < 42){
+    const next = cells.length - (startOffset + daysInMonth) + 1;
+    cells.push({day: next, dim:true, y:viewMonth===11?viewYear+1:viewYear, m:viewMonth===11?0:viewMonth+1});
+    if (cells.length >= 42) break;
+  }
+
+  cells.forEach(c => {
+    const key = c.y + "-" + String(c.m+1).padStart(2,"0") + "-" + String(c.day).padStart(2,"0");
+    const dayItems = byDay[key] || [];
+    const hasOverdue = dayItems.some(it => !it.tamamlandi && it.teslim_tarihi <= nowUtcStr());
+
+    const cell = document.createElement("div");
+    cell.className = "cal-cell" + (c.dim ? " dim" : "") + (key===todayKey ? " today":"") + (hasOverdue?" has-overdue":"");
+    cell.innerHTML =
+      '<div class="cal-day-num">' + c.day + '</div>' +
+      '<div class="cal-dots">' +
+        dayItems.slice(0,4).map(it => '<span class="cal-dot" style="background:'+colorFor(it.ders)+'"></span>').join("") +
+        (dayItems.length > 4 ? '<span class="cal-more">+'+(dayItems.length-4)+'</span>' : "") +
+      '</div>';
+    cell.addEventListener("click", () => openModal(null, key));
+    grid.appendChild(cell);
+  });
+}
+
+function fmtTime(d){
+  return d.toLocaleTimeString("tr-TR", {hour:"2-digit", minute:"2-digit"});
+}
+function fmtDayLabel(d){
+  return d.toLocaleDateString("tr-TR", {day:"numeric", month:"long"});
+}
+
+function renderAgenda(){
+  const panel = document.getElementById("agendaPanel");
+  panel.innerHTML = "";
+
+  const now = new Date();
+  const nowStr = nowUtcStr();
+  const todayKey = localDayKey(now);
+  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowKey = localDayKey(tomorrow);
+  const weekLimit = new Date(now); weekLimit.setDate(weekLimit.getDate()+7);
+
+  const active = items.filter(it => !it.tamamlandi);
+  const done = items.filter(it => it.tamamlandi);
+
+  const gecikmis = active.filter(it => it.teslim_tarihi < nowStr && localDayKey(toLocalDate(it.teslim_tarihi)) !== todayKey);
+  const bugun = active.filter(it => localDayKey(toLocalDate(it.teslim_tarihi)) === todayKey);
+  const yarin = active.filter(it => localDayKey(toLocalDate(it.teslim_tarihi)) === tomorrowKey);
+  const buHafta = active.filter(it => {
+    const d = toLocalDate(it.teslim_tarihi);
+    return d > tomorrow && d <= weekLimit;
+  });
+  const sonrasi = active.filter(it => toLocalDate(it.teslim_tarihi) > weekLimit);
+
+  const groups = [
+    {label:"Gecikmiş", data:gecikmis, danger:true},
+    {label:"Bugün", data:bugun},
+    {label:"Yarın", data:yarin},
+    {label:"Bu Hafta", data:buHafta},
+    {label:"Sonrası", data:sonrasi},
+  ];
+
+  groups.forEach(g => {
+    if (g.data.length === 0) return;
+    const wrap = document.createElement("div");
+    wrap.className = "agenda-group";
+    const sorted = g.data.slice().sort((a,b)=> a.teslim_tarihi.localeCompare(b.teslim_tarihi));
+    wrap.innerHTML =
+      '<div class="agenda-label'+(g.danger?" danger":"")+'">'+g.label+'</div>' +
+      sorted.map(taskHtml).join("");
+    panel.appendChild(wrap);
+  });
+
+  if (gecikmis.length+bugun.length+yarin.length+buHafta.length+sonrasi.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "agenda-empty";
+    empty.textContent = "Yaklaşan ödev yok. Takvimden bir güne tıklayarak ekleyebilirsin.";
+    panel.appendChild(empty);
+  }
+
+  const toggle = document.createElement("button");
+  toggle.className = "collapse-toggle";
+  toggle.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Tamamlanan (' + done.length + ')';
+  const doneWrap = document.createElement("div");
+  doneWrap.style.display = "none";
+  doneWrap.innerHTML = done.slice().sort((a,b)=> b.teslim_tarihi.localeCompare(a.teslim_tarihi)).map(taskHtml).join("");
+  toggle.addEventListener("click", () => {
+    const open = doneWrap.style.display !== "none";
+    doneWrap.style.display = open ? "none" : "block";
+    toggle.classList.toggle("open", !open);
+  });
+  panel.appendChild(toggle);
+  panel.appendChild(doneWrap);
+
+  panel.querySelectorAll("[data-check]").forEach(el => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = el.getAttribute("data-check");
+      const it = items.find(x => x.id === id);
+      const val = !it.tamamlandi;
+      updateDoc(doc(db, "odevler", id), val ? {tamamlandi:true, gonderildi:true} : {tamamlandi:false});
+    });
+  });
+  panel.querySelectorAll("[data-open]").forEach(el => {
+    el.addEventListener("click", () => openModal(el.getAttribute("data-open")));
+  });
+  panel.querySelectorAll("[data-del]").forEach(el => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (confirm("Bu ödevi silmek istediğine emin misin?")){
+        deleteDoc(doc(db, "odevler", el.getAttribute("data-del")));
       }
     });
-  </script>
+  });
+}
+
+function taskHtml(it){
+  const d = toLocalDate(it.teslim_tarihi);
+  const overdue = !it.tamamlandi && it.teslim_tarihi < nowUtcStr();
+  return (
+    '<div class="task'+(it.tamamlandi?" done":"")+'">' +
+      '<div class="task-bar" style="background:'+colorFor(it.ders)+'"></div>' +
+      '<div class="task-check'+(it.tamamlandi?" checked":"")+'" data-check="'+it.id+'">' +
+        (it.tamamlandi ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+      '</div>' +
+      '<div class="task-body" data-open="'+it.id+'">' +
+        '<div class="task-title">'+escapeHtml(it.baslik || "(başlıksız)")+'</div>' +
+        '<div class="task-meta'+(overdue?" danger":"")+'">'+(it.ders?escapeHtml(it.ders)+" · ":"")+fmtDayLabel(d)+", "+fmtTime(d)+'</div>' +
+      '</div>' +
+      '<button class="task-del" data-del="'+it.id+'" aria-label="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+    '</div>'
+  );
+}
+
+function escapeHtml(s){
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function updateDersListe(){
+  const dl = document.getElementById("dersListe");
+  const dersSet = new Set(items.map(it => it.ders).filter(Boolean));
+  dl.innerHTML = Array.from(dersSet).sort().map(d => '<option value="'+escapeHtml(d)+'"></option>').join("");
+}
+
+function renderAll(){
+  renderCalendar();
+  renderAgenda();
+  updateDersListe();
+}
+
+const q = query(odevlerRef, orderBy("teslim_tarihi", "asc"));
+onSnapshot(q, snap => {
+  items = snap.docs.map(d => ({id: d.id, ...d.data()}));
+  renderAll();
+});
+
+document.getElementById("prevMonth").addEventListener("click", () => {
+  viewMonth--; if (viewMonth < 0){viewMonth=11; viewYear--;}
+  renderCalendar();
+});
+document.getElementById("nextMonth").addEventListener("click", () => {
+  viewMonth++; if (viewMonth > 11){viewMonth=0; viewYear++;}
+  renderCalendar();
+});
+document.getElementById("todayBtn").addEventListener("click", () => {
+  const t = new Date();
+  viewYear = t.getFullYear(); viewMonth = t.getMonth();
+  renderCalendar();
+});
+
+const overlay = document.getElementById("modalOverlay");
+const fBaslik = document.getElementById("fBaslik");
+const fDers = document.getElementById("fDers");
+const fTarih = document.getElementById("fTarih");
+const deleteBtn = document.getElementById("deleteBtn");
+
+function openModal(id, dayKeyForNew){
+  editingId = id;
+  document.getElementById("modalTitle").textContent = id ? "Ödevi Düzenle" : "Yeni Ödev";
+  deleteBtn.style.display = id ? "inline-flex" : "none";
+
+  if (id){
+    const it = items.find(x => x.id === id);
+    fBaslik.value = it.baslik || "";
+    fDers.value = it.ders || "";
+    const d = toLocalDate(it.teslim_tarihi);
+    fTarih.value = localDayKey(d) + "T" + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  } else {
+    fBaslik.value = "";
+    fDers.value = "";
+    fTarih.value = (dayKeyForNew || localDayKey(new Date())) + "T09:00";
+  }
+  overlay.classList.add("open");
+  setTimeout(() => fBaslik.focus(), 50);
+}
+function closeModal(){
+  overlay.classList.remove("open");
+  editingId = null;
+}
+
+document.getElementById("addBtn").addEventListener("click", () => openModal(null));
+document.getElementById("cancelBtn").addEventListener("click", closeModal);
+overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+
+document.getElementById("saveBtn").addEventListener("click", async () => {
+  const baslik = fBaslik.value.trim();
+  const ders = fDers.value.trim();
+  const localVal = fTarih.value;
+  if (!baslik || !localVal){
+    alert("Lütfen ödev adı ve teslim tarihi gir.");
+    return;
+  }
+  const utcVal = new Date(localVal).toISOString().slice(0,16);
+
+  if (editingId){
+    await updateDoc(doc(db, "odevler", editingId), {
+      baslik, ders, teslim_tarihi: utcVal
+    });
+  } else {
+    await addDoc(odevlerRef, {
+      baslik, ders, teslim_tarihi: utcVal,
+      gonderildi: false, tamamlandi: false,
+      olusturulma: new Date().toISOString()
+    });
+  }
+  closeModal();
+});
+
+deleteBtn.addEventListener("click", async () => {
+  if (!editingId) return;
+  if (confirm("Bu ödevi silmek istediğine emin misin?")){
+    await deleteDoc(doc(db, "odevler", editingId));
+    closeModal();
+  }
+});
+
+renderCalendar();
+</script>
 </body>
 </html>
