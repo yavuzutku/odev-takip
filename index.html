@@ -38,16 +38,11 @@
 
   .topbar{
     display:flex;align-items:center;justify-content:space-between;
-    gap:16px;flex-wrap:wrap;margin-bottom:26px;
+    gap:16px;flex-wrap:wrap;margin-bottom:18px;
   }
   .topbar-left{display:flex;align-items:center;gap:14px;}
-  .brand{
-    display:flex;align-items:baseline;gap:10px;
-  }
-  .brand h1{
-    font-family:var(--serif);
-    font-size:26px;font-weight:600;margin:0;letter-spacing:.2px;
-  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand h1{font-family:var(--serif);font-size:26px;font-weight:600;margin:0;letter-spacing:.2px;}
   .brand span{color:var(--text-faint);font-size:13px;}
 
   .month-nav{display:flex;align-items:center;gap:6px;}
@@ -57,10 +52,7 @@
     justify-content:center;cursor:pointer;transition:background .15s,color .15s,border-color .15s;
   }
   .icon-btn:hover{background:var(--surface-hi);color:var(--text);border-color:#333a52;}
-  .month-title{
-    font-family:var(--serif);font-size:19px;min-width:150px;text-align:center;
-    font-weight:600;
-  }
+  .month-title{font-family:var(--serif);font-size:19px;min-width:150px;text-align:center;font-weight:600;}
 
   .topbar-right{display:flex;align-items:center;gap:10px;}
   .btn{
@@ -74,16 +66,19 @@
   .btn-accent{background:var(--accent);color:var(--accent-ink);}
   .btn-accent:hover{opacity:.9;}
 
+  .stats-strip{
+    display:flex;gap:22px;flex-wrap:wrap;padding:14px 18px;margin-bottom:18px;
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  }
+  .stat{display:flex;flex-direction:column;gap:2px;}
+  .stat b{font-family:var(--serif);font-size:19px;font-weight:600;}
+  .stat span{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;}
+  .stat.danger b{color:var(--danger);}
+
   .layout{display:flex;gap:22px;align-items:flex-start;}
-  .calendar-panel{
-    flex:1.5;background:var(--surface);border:1px solid var(--border);
-    border-radius:18px;padding:18px;min-width:0;
-  }
+  .calendar-panel{flex:1.5;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;min-width:0;}
   .weekday-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;}
-  .weekday-row div{
-    text-align:center;font-size:11.5px;color:var(--text-faint);
-    text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;
-  }
+  .weekday-row div{text-align:center;font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;}
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
   .cal-cell{
     aspect-ratio:1/0.92;border-radius:12px;border:1px solid var(--border-soft);
@@ -93,84 +88,72 @@
   .cal-cell:hover{background:var(--surface-hi);border-color:#333a52;}
   .cal-cell.dim{opacity:.35;}
   .cal-cell.today{border-color:var(--accent);box-shadow:var(--ring);}
-  .cal-day-num{
-    font-family:var(--serif);font-size:16px;font-weight:600;color:var(--text);
-    line-height:1;
-  }
+  .cal-day-num{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--text);line-height:1;}
   .cal-cell.today .cal-day-num{color:var(--accent);}
   .cal-cell.has-overdue .cal-day-num{color:var(--danger);}
   .cal-dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;}
   .cal-dot{width:6px;height:6px;border-radius:50%;flex:none;}
   .cal-more{font-size:10px;color:var(--text-faint);}
 
-  .agenda-panel{
-    flex:1;background:var(--surface);border:1px solid var(--border);
-    border-radius:18px;padding:18px 16px;min-width:0;position:sticky;top:20px;
-  }
+  .agenda-panel{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;min-width:0;position:sticky;top:20px;}
+
+  .search-row{display:flex;align-items:center;gap:8px;background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:10px;}
+  .search-row svg{flex:none;color:var(--text-faint);}
+  .search-row input{flex:1;background:none;border:none;color:var(--text);font-size:13.5px;font-family:var(--sans);}
+  .search-row input:focus{outline:none;}
+
+  .chip-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip-row.subjects{margin-bottom:14px;}
+  .chip{padding:6px 11px;border-radius:999px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text-dim);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);user-select:none;transition:background .15s,color .15s,border-color .15s,opacity .15s;}
+  .chip:hover{border-color:#333a52;}
+  .chip.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  .chip.dimmed{opacity:.4;}
+  .chip-dot{width:7px;height:7px;border-radius:50%;flex:none;}
+
   .agenda-group{margin-bottom:18px;}
   .agenda-group:last-child{margin-bottom:0;}
-  .agenda-label{
-    font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);
-    margin-bottom:8px;display:flex;align-items:center;gap:8px;
-  }
+  .agenda-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-faint);margin-bottom:8px;}
   .agenda-label.danger{color:var(--danger);}
   .agenda-empty{font-size:13px;color:var(--text-faint);padding:2px 0 4px;}
 
-  .task{
-    display:flex;align-items:flex-start;gap:10px;padding:9px 8px;border-radius:10px;
-    margin-bottom:2px;transition:background .15s;
-  }
+  .task{display:flex;align-items:flex-start;gap:10px;padding:9px 8px;border-radius:10px;margin-bottom:2px;transition:background .15s;}
   .task:hover{background:var(--surface-hi);}
   .task-bar{width:3px;align-self:stretch;border-radius:2px;flex:none;margin-top:2px;}
-  .task-check{
-    width:18px;height:18px;border-radius:6px;border:1.5px solid var(--border);
-    background:var(--bg-soft);flex:none;margin-top:2px;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;color:var(--accent-ink);
-  }
+  .task-check{width:18px;height:18px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-soft);flex:none;margin-top:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--accent-ink);}
   .task-check.checked{background:var(--accent);border-color:var(--accent);}
   .task-body{flex:1;min-width:0;cursor:pointer;}
+  .task-title-row{display:flex;align-items:center;gap:5px;}
   .task-title{font-size:13.5px;font-weight:600;color:var(--text);line-height:1.35;}
   .task.done .task-title{color:var(--text-faint);text-decoration:line-through;}
   .task-meta{font-size:12px;color:var(--text-dim);margin-top:2px;}
   .task-meta.danger{color:var(--danger);}
-  .task-del{
-    width:24px;height:24px;border:none;background:transparent;color:var(--text-faint);
-    cursor:pointer;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;
-  }
+  .task-del{width:24px;height:24px;border:none;background:transparent;color:var(--text-faint);cursor:pointer;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;}
   .task-del:hover{color:var(--danger);background:var(--danger-soft);}
 
-  .collapse-toggle{
-    display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text-faint);
-    font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;cursor:pointer;padding:0;
-    margin-bottom:8px;font-family:var(--sans);
-  }
+  .collapse-toggle{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--text-faint);font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;cursor:pointer;padding:0;margin-bottom:8px;font-family:var(--sans);}
   .collapse-toggle:hover{color:var(--text-dim);}
   .collapse-toggle svg{transition:transform .15s;}
   .collapse-toggle.open svg{transform:rotate(90deg);}
 
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(8,9,14,.6);backdrop-filter:blur(3px);
-    display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;
-    opacity:0;pointer-events:none;transition:opacity .15s;
-  }
+  .modal-overlay{position:fixed;inset:0;background:rgba(8,9,14,.6);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;opacity:0;pointer-events:none;transition:opacity .15s;overflow-y:auto;}
   .modal-overlay.open{opacity:1;pointer-events:auto;}
-  .modal{
-    background:var(--surface);border:1px solid var(--border);border-radius:18px;
-    padding:22px;width:100%;max-width:400px;
-    transform:translateY(6px) scale(.98);transition:transform .15s;
-  }
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;width:100%;max-width:440px;transform:translateY(6px) scale(.98);transition:transform .15s;margin:auto;}
   .modal-overlay.open .modal{transform:translateY(0) scale(1);}
   .modal h2{font-family:var(--serif);font-size:19px;margin:0 0 16px;}
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;}
-  .field input{
-    width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--border);
-    background:var(--bg-soft);color:var(--text);font-size:14px;font-family:var(--sans);
-  }
-  .field input:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring);}
+  .field input,.field textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:14px;font-family:var(--sans);resize:vertical;}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring);}
+  .field-hint{font-size:11.5px;color:var(--text-faint);margin-top:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .link-btn{background:none;border:none;color:var(--accent);font-size:11.5px;cursor:pointer;padding:0;font-family:var(--sans);}
+  .custom-reminder-row{display:flex;gap:6px;margin-top:8px;align-items:center;}
+  .custom-reminder-row input{width:64px;flex:none;padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:13px;}
+  .custom-reminder-row select{padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:13px;font-family:var(--sans);}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
   .btn-danger-ghost{background:transparent;color:var(--danger);border:1px solid var(--danger-soft);}
   .btn-danger-ghost:hover{background:var(--danger-soft);}
+  .flag-icon{color:var(--danger);flex:none;}
+  .note-icon{color:var(--text-faint);flex:none;}
 
   @media (max-width:860px){
     .layout{flex-direction:column;}
@@ -206,6 +189,8 @@
       </div>
     </div>
 
+    <div class="stats-strip" id="statsStrip"></div>
+
     <div class="layout">
       <section class="calendar-panel">
         <div class="weekday-row">
@@ -214,7 +199,14 @@
         <div class="cal-grid" id="calGrid"></div>
       </section>
 
-      <aside class="agenda-panel" id="agendaPanel"></aside>
+      <aside class="agenda-panel">
+        <div class="search-row">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input type="text" id="searchInput" placeholder="Ödev veya ders ara...">
+        </div>
+        <div class="chip-row subjects" id="subjectFilters"></div>
+        <div id="agendaContent"></div>
+      </aside>
     </div>
   </div>
 
@@ -233,6 +225,31 @@
       <div class="field">
         <label for="fTarih">Son Teslim Tarihi ve Saati</label>
         <input type="datetime-local" id="fTarih" required>
+      </div>
+      <div class="field">
+        <label>Öncelik</label>
+        <div class="chip-row" id="priorityChips"></div>
+      </div>
+      <div class="field">
+        <label>Bildirim Zamanlaması</label>
+        <div class="chip-row" id="reminderChips"></div>
+        <div class="custom-reminder-row">
+          <input type="number" id="customAmount" min="1" placeholder="5">
+          <select id="customUnit">
+            <option value="60">dakika</option>
+            <option value="3600" selected>saat</option>
+            <option value="86400">gün</option>
+          </select>
+          <button class="btn btn-ghost" id="addCustomReminder" type="button" style="padding:7px 10px;font-size:12.5px;">Ekle</button>
+        </div>
+        <div class="field-hint">
+          <span>Bu ödev için seçilenler geçerli.</span>
+          <button class="link-btn" id="saveDefaultReminders" type="button">Varsayılan yap</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fNotlar">Notlar (opsiyonel)</label>
+        <textarea id="fNotlar" rows="3" placeholder="Ek detaylar, bağlantılar..."></textarea>
       </div>
       <div class="modal-actions">
         <button class="btn btn-danger-ghost" id="deleteBtn" style="display:none;">Sil</button>
@@ -270,16 +287,55 @@ function colorFor(ders){
   return PALETTE[h % PALETTE.length];
 }
 
+const PRESET_REMINDERS = [
+  {dk:10080, label:"1 hafta önce"},
+  {dk:1440,  label:"1 gün önce"},
+  {dk:720,   label:"12 saat önce"},
+  {dk:180,   label:"3 saat önce"},
+  {dk:60,    label:"1 saat önce"},
+  {dk:30,    label:"30 dk önce"},
+  {dk:0,     label:"Tam zamanında"},
+];
+const PRIORITIES = [
+  {v:"dusuk", label:"Düşük"},
+  {v:"orta",  label:"Orta"},
+  {v:"yuksek",label:"Yüksek"},
+];
+const DEFAULT_REMINDER_DK = [1440, 180, 0];
+
+function loadDefaultReminders(){
+  try{
+    const raw = localStorage.getItem("odevVarsayilanHatirlatma");
+    if (raw) return JSON.parse(raw);
+  }catch(e){}
+  return DEFAULT_REMINDER_DK.slice();
+}
+function saveDefaultReminders(arr){
+  localStorage.setItem("odevVarsayilanHatirlatma", JSON.stringify(arr));
+}
+function reminderLabel(dk){
+  const preset = PRESET_REMINDERS.find(p => p.dk === dk);
+  if (preset) return preset.label;
+  if (dk === 0) return "Tam zamanında";
+  if (dk < 60) return dk + " dk önce";
+  if (dk < 1440) return Math.round(dk/60) + " saat önce";
+  return Math.round(dk/1440) + " gün önce";
+}
+
 let items = [];
 let viewYear, viewMonth;
 let editingId = null;
+let selectedReminders = new Set();
+let extraReminderChips = [];
+let selectedPriority = "orta";
+let searchText = "";
+let hiddenSubjects = new Set();
 
 const today = new Date();
 viewYear = today.getFullYear();
 viewMonth = today.getMonth();
 
 function toLocalDate(utcStr){
-  // teslim_tarihi Firestore'da UTC "YYYY-MM-DDTHH:MM" olarak tutulur
   return new Date(utcStr + ":00Z");
 }
 function localDayKey(d){
@@ -287,6 +343,22 @@ function localDayKey(d){
 }
 function nowUtcStr(){
   return new Date().toISOString().slice(0,16);
+}
+function startOfWeek(d){
+  const r = new Date(d);
+  const diff = (r.getDay() + 6) % 7; // Pazartesi baslangic
+  r.setDate(r.getDate() - diff);
+  r.setHours(0,0,0,0);
+  return r;
+}
+
+function visibleItems(){
+  const q = searchText.trim().toLowerCase();
+  return items.filter(it => {
+    if (hiddenSubjects.has(it.ders || "Genel")) return false;
+    if (!q) return true;
+    return (it.baslik||"").toLowerCase().includes(q) || (it.ders||"").toLowerCase().includes(q);
+  });
 }
 
 function renderMonthTitle(){
@@ -299,16 +371,16 @@ function renderCalendar(){
   const grid = document.getElementById("calGrid");
   grid.innerHTML = "";
 
+  const vItems = visibleItems();
   const firstOfMonth = new Date(viewYear, viewMonth, 1);
-  let startOffset = firstOfMonth.getDay() - 1; // Pazartesi = 0
+  let startOffset = firstOfMonth.getDay() - 1;
   if (startOffset < 0) startOffset = 6;
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
-
   const todayKey = localDayKey(new Date());
 
   const byDay = {};
-  items.forEach(it => {
+  vItems.forEach(it => {
     const d = toLocalDate(it.teslim_tarihi);
     const key = localDayKey(d);
     (byDay[key] = byDay[key] || []).push(it);
@@ -321,10 +393,9 @@ function renderCalendar(){
   for (let d = 1; d <= daysInMonth; d++){
     cells.push({day:d, dim:false, y:viewYear, m:viewMonth});
   }
-  while (cells.length % 7 !== 0 || cells.length < 42){
-    const next = cells.length - (startOffset + daysInMonth) + 1;
-    cells.push({day: next, dim:true, y:viewMonth===11?viewYear+1:viewYear, m:viewMonth===11?0:viewMonth+1});
-    if (cells.length >= 42) break;
+  let nextDay = 1;
+  while (cells.length < 42){
+    cells.push({day: nextDay++, dim:true, y:viewMonth===11?viewYear+1:viewYear, m:viewMonth===11?0:viewMonth+1});
   }
 
   cells.forEach(c => {
@@ -345,17 +416,82 @@ function renderCalendar(){
   });
 }
 
-function fmtTime(d){
-  return d.toLocaleTimeString("tr-TR", {hour:"2-digit", minute:"2-digit"});
+function fmtTime(d){ return d.toLocaleTimeString("tr-TR", {hour:"2-digit", minute:"2-digit"}); }
+function fmtDayLabel(d){ return d.toLocaleDateString("tr-TR", {day:"numeric", month:"long"}); }
+
+function flagIcon(){
+  return '<svg class="flag-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 3v18M5 4h11l-2 4 2 4H5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
-function fmtDayLabel(d){
-  return d.toLocaleDateString("tr-TR", {day:"numeric", month:"long"});
+function noteIcon(){
+  return '<svg class="note-icon" width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v12H8l-4 4V4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+}
+
+function taskHtml(it){
+  const d = toLocalDate(it.teslim_tarihi);
+  const overdue = !it.tamamlandi && it.teslim_tarihi < nowUtcStr();
+  return (
+    '<div class="task'+(it.tamamlandi?" done":"")+'">' +
+      '<div class="task-bar" style="background:'+colorFor(it.ders)+'"></div>' +
+      '<div class="task-check'+(it.tamamlandi?" checked":"")+'" data-check="'+it.id+'">' +
+        (it.tamamlandi ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+      '</div>' +
+      '<div class="task-body" data-open="'+it.id+'">' +
+        '<div class="task-title-row">' +
+          (it.oncelik === "yuksek" ? flagIcon() : "") +
+          '<div class="task-title">'+escapeHtml(it.baslik || "(başlıksız)")+'</div>' +
+          (it.notlar ? noteIcon() : "") +
+        '</div>' +
+        '<div class="task-meta'+(overdue?" danger":"")+'">'+(it.ders?escapeHtml(it.ders)+" · ":"")+fmtDayLabel(d)+", "+fmtTime(d)+'</div>' +
+      '</div>' +
+      '<button class="task-del" data-del="'+it.id+'" aria-label="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+    '</div>'
+  );
+}
+
+function escapeHtml(s){
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function renderStats(){
+  const active = items.filter(it => !it.tamamlandi);
+  const gecikenSayi = active.filter(it => it.teslim_tarihi < nowUtcStr()).length;
+  const wStart = startOfWeek(new Date());
+  const wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate()+7);
+  const weekItems = items.filter(it => { const d = toLocalDate(it.teslim_tarihi); return d >= wStart && d < wEnd; });
+  const weekDone = weekItems.filter(it => it.tamamlandi).length;
+
+  const strip = document.getElementById("statsStrip");
+  strip.innerHTML =
+    '<div class="stat"><b>'+active.length+'</b><span>Bekleyen</span></div>' +
+    '<div class="stat'+(gecikenSayi>0?" danger":"")+'"><b>'+gecikenSayi+'</b><span>Geciken</span></div>' +
+    '<div class="stat"><b>'+weekDone+'/'+weekItems.length+'</b><span>Bu hafta tamamlanan</span></div>';
+}
+
+function renderSubjectFilters(){
+  const wrap = document.getElementById("subjectFilters");
+  const dersSet = Array.from(new Set(items.map(it => it.ders || "Genel"))).sort();
+  if (dersSet.length === 0){ wrap.innerHTML=""; return; }
+  wrap.innerHTML = dersSet.map(d =>
+    '<span class="chip'+(hiddenSubjects.has(d)?" dimmed":" active")+'" data-subject="'+escapeHtml(d)+'">' +
+      '<span class="chip-dot" style="background:'+colorFor(d)+'"></span>' + escapeHtml(d) +
+    '</span>'
+  ).join("");
+  wrap.querySelectorAll("[data-subject]").forEach(el => {
+    el.addEventListener("click", () => {
+      const s = el.getAttribute("data-subject");
+      if (hiddenSubjects.has(s)) hiddenSubjects.delete(s); else hiddenSubjects.add(s);
+      renderCalendar(); renderAgenda(); renderSubjectFilters();
+    });
+  });
 }
 
 function renderAgenda(){
-  const panel = document.getElementById("agendaPanel");
-  panel.innerHTML = "";
+  const content = document.getElementById("agendaContent");
+  content.innerHTML = "";
 
+  const vItems = visibleItems();
   const now = new Date();
   const nowStr = nowUtcStr();
   const todayKey = localDayKey(now);
@@ -363,16 +499,13 @@ function renderAgenda(){
   const tomorrowKey = localDayKey(tomorrow);
   const weekLimit = new Date(now); weekLimit.setDate(weekLimit.getDate()+7);
 
-  const active = items.filter(it => !it.tamamlandi);
-  const done = items.filter(it => it.tamamlandi);
+  const active = vItems.filter(it => !it.tamamlandi);
+  const done = vItems.filter(it => it.tamamlandi);
 
   const gecikmis = active.filter(it => it.teslim_tarihi < nowStr && localDayKey(toLocalDate(it.teslim_tarihi)) !== todayKey);
   const bugun = active.filter(it => localDayKey(toLocalDate(it.teslim_tarihi)) === todayKey);
   const yarin = active.filter(it => localDayKey(toLocalDate(it.teslim_tarihi)) === tomorrowKey);
-  const buHafta = active.filter(it => {
-    const d = toLocalDate(it.teslim_tarihi);
-    return d > tomorrow && d <= weekLimit;
-  });
+  const buHafta = active.filter(it => { const d = toLocalDate(it.teslim_tarihi); return d > tomorrow && d <= weekLimit; });
   const sonrasi = active.filter(it => toLocalDate(it.teslim_tarihi) > weekLimit);
 
   const groups = [
@@ -391,14 +524,16 @@ function renderAgenda(){
     wrap.innerHTML =
       '<div class="agenda-label'+(g.danger?" danger":"")+'">'+g.label+'</div>' +
       sorted.map(taskHtml).join("");
-    panel.appendChild(wrap);
+    content.appendChild(wrap);
   });
 
   if (gecikmis.length+bugun.length+yarin.length+buHafta.length+sonrasi.length === 0){
     const empty = document.createElement("div");
     empty.className = "agenda-empty";
-    empty.textContent = "Yaklaşan ödev yok. Takvimden bir güne tıklayarak ekleyebilirsin.";
-    panel.appendChild(empty);
+    empty.textContent = items.length === 0
+      ? "Yaklaşan ödev yok. Takvimden bir güne tıklayarak ekleyebilirsin."
+      : "Bu filtrelere uyan ödev yok.";
+    content.appendChild(empty);
   }
 
   const toggle = document.createElement("button");
@@ -412,22 +547,21 @@ function renderAgenda(){
     doneWrap.style.display = open ? "none" : "block";
     toggle.classList.toggle("open", !open);
   });
-  panel.appendChild(toggle);
-  panel.appendChild(doneWrap);
+  content.appendChild(toggle);
+  content.appendChild(doneWrap);
 
-  panel.querySelectorAll("[data-check]").forEach(el => {
+  content.querySelectorAll("[data-check]").forEach(el => {
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       const id = el.getAttribute("data-check");
       const it = items.find(x => x.id === id);
-      const val = !it.tamamlandi;
-      updateDoc(doc(db, "odevler", id), val ? {tamamlandi:true, gonderildi:true} : {tamamlandi:false});
+      updateDoc(doc(db, "odevler", id), {tamamlandi: !it.tamamlandi});
     });
   });
-  panel.querySelectorAll("[data-open]").forEach(el => {
+  content.querySelectorAll("[data-open]").forEach(el => {
     el.addEventListener("click", () => openModal(el.getAttribute("data-open")));
   });
-  panel.querySelectorAll("[data-del]").forEach(el => {
+  content.querySelectorAll("[data-del]").forEach(el => {
     el.addEventListener("click", (e) => {
       e.stopPropagation();
       if (confirm("Bu ödevi silmek istediğine emin misin?")){
@@ -437,30 +571,6 @@ function renderAgenda(){
   });
 }
 
-function taskHtml(it){
-  const d = toLocalDate(it.teslim_tarihi);
-  const overdue = !it.tamamlandi && it.teslim_tarihi < nowUtcStr();
-  return (
-    '<div class="task'+(it.tamamlandi?" done":"")+'">' +
-      '<div class="task-bar" style="background:'+colorFor(it.ders)+'"></div>' +
-      '<div class="task-check'+(it.tamamlandi?" checked":"")+'" data-check="'+it.id+'">' +
-        (it.tamamlandi ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
-      '</div>' +
-      '<div class="task-body" data-open="'+it.id+'">' +
-        '<div class="task-title">'+escapeHtml(it.baslik || "(başlıksız)")+'</div>' +
-        '<div class="task-meta'+(overdue?" danger":"")+'">'+(it.ders?escapeHtml(it.ders)+" · ":"")+fmtDayLabel(d)+", "+fmtTime(d)+'</div>' +
-      '</div>' +
-      '<button class="task-del" data-del="'+it.id+'" aria-label="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
-    '</div>'
-  );
-}
-
-function escapeHtml(s){
-  const div = document.createElement("div");
-  div.textContent = s;
-  return div.innerHTML;
-}
-
 function updateDersListe(){
   const dl = document.getElementById("dersListe");
   const dersSet = new Set(items.map(it => it.ders).filter(Boolean));
@@ -468,6 +578,8 @@ function updateDersListe(){
 }
 
 function renderAll(){
+  renderStats();
+  renderSubjectFilters();
   renderCalendar();
   renderAgenda();
   updateDersListe();
@@ -479,28 +591,89 @@ onSnapshot(q, snap => {
   renderAll();
 });
 
-document.getElementById("prevMonth").addEventListener("click", () => {
-  viewMonth--; if (viewMonth < 0){viewMonth=11; viewYear--;}
-  renderCalendar();
-});
-document.getElementById("nextMonth").addEventListener("click", () => {
-  viewMonth++; if (viewMonth > 11){viewMonth=0; viewYear++;}
-  renderCalendar();
-});
-document.getElementById("todayBtn").addEventListener("click", () => {
-  const t = new Date();
-  viewYear = t.getFullYear(); viewMonth = t.getMonth();
-  renderCalendar();
+document.getElementById("prevMonth").addEventListener("click", () => { viewMonth--; if (viewMonth<0){viewMonth=11;viewYear--;} renderCalendar(); });
+document.getElementById("nextMonth").addEventListener("click", () => { viewMonth++; if (viewMonth>11){viewMonth=0;viewYear++;} renderCalendar(); });
+document.getElementById("todayBtn").addEventListener("click", () => { const t=new Date(); viewYear=t.getFullYear(); viewMonth=t.getMonth(); renderCalendar(); });
+
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  searchText = e.target.value;
+  renderCalendar(); renderAgenda();
 });
 
+document.addEventListener("keydown", (e) => {
+  if (e.key === "n" && !overlayIsOpen()){
+    const tag = document.activeElement.tagName;
+    if (tag !== "INPUT" && tag !== "TEXTAREA"){
+      e.preventDefault();
+      openModal(null);
+    }
+  }
+  if (e.key === "Escape" && overlayIsOpen()) closeModal();
+});
+function overlayIsOpen(){ return document.getElementById("modalOverlay").classList.contains("open"); }
+
+// ---- Modal ----
 const overlay = document.getElementById("modalOverlay");
 const fBaslik = document.getElementById("fBaslik");
 const fDers = document.getElementById("fDers");
 const fTarih = document.getElementById("fTarih");
+const fNotlar = document.getElementById("fNotlar");
 const deleteBtn = document.getElementById("deleteBtn");
+const reminderChipsEl = document.getElementById("reminderChips");
+const priorityChipsEl = document.getElementById("priorityChips");
+
+function renderPriorityChips(){
+  priorityChipsEl.innerHTML = PRIORITIES.map(p =>
+    '<span class="chip'+(selectedPriority===p.v?" active":"")+'" data-priority="'+p.v+'">'+p.label+'</span>'
+  ).join("");
+  priorityChipsEl.querySelectorAll("[data-priority]").forEach(el => {
+    el.addEventListener("click", () => { selectedPriority = el.getAttribute("data-priority"); renderPriorityChips(); });
+  });
+}
+
+function allReminderOptions(){
+  const extras = extraReminderChips.filter(e => !PRESET_REMINDERS.some(p => p.dk === e.dk));
+  return PRESET_REMINDERS.concat(extras).sort((a,b)=> b.dk - a.dk);
+}
+
+function renderReminderChips(){
+  const options = allReminderOptions();
+  reminderChipsEl.innerHTML = options.map(o =>
+    '<span class="chip'+(selectedReminders.has(o.dk)?" active":"")+'" data-dk="'+o.dk+'">'+o.label+'</span>'
+  ).join("");
+  reminderChipsEl.querySelectorAll("[data-dk]").forEach(el => {
+    el.addEventListener("click", () => {
+      const dk = parseInt(el.getAttribute("data-dk"), 10);
+      if (selectedReminders.has(dk)) selectedReminders.delete(dk); else selectedReminders.add(dk);
+      renderReminderChips();
+    });
+  });
+}
+
+document.getElementById("addCustomReminder").addEventListener("click", () => {
+  const amount = parseFloat(document.getElementById("customAmount").value);
+  const unitSec = parseInt(document.getElementById("customUnit").value, 10);
+  if (!amount || amount <= 0) return;
+  const dk = Math.round((amount * unitSec) / 60);
+  if (!allReminderOptions().some(o => o.dk === dk)){
+    extraReminderChips.push({dk, label: reminderLabel(dk)});
+  }
+  selectedReminders.add(dk);
+  document.getElementById("customAmount").value = "";
+  renderReminderChips();
+});
+
+document.getElementById("saveDefaultReminders").addEventListener("click", (e) => {
+  saveDefaultReminders(Array.from(selectedReminders));
+  const btn = e.target;
+  const old = btn.textContent;
+  btn.textContent = "Kaydedildi ✓";
+  setTimeout(() => { btn.textContent = old; }, 1400);
+});
 
 function openModal(id, dayKeyForNew){
   editingId = id;
+  extraReminderChips = [];
   document.getElementById("modalTitle").textContent = id ? "Ödevi Düzenle" : "Yeni Ödev";
   deleteBtn.style.display = id ? "inline-flex" : "none";
 
@@ -508,20 +681,27 @@ function openModal(id, dayKeyForNew){
     const it = items.find(x => x.id === id);
     fBaslik.value = it.baslik || "";
     fDers.value = it.ders || "";
+    fNotlar.value = it.notlar || "";
+    selectedPriority = it.oncelik || "orta";
     const d = toLocalDate(it.teslim_tarihi);
     fTarih.value = localDayKey(d) + "T" + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+    const existingDks = (it.hatirlatmalar || []).map(h => h.dk);
+    existingDks.forEach(dk => { if (!allReminderOptions().some(o=>o.dk===dk)) extraReminderChips.push({dk, label: reminderLabel(dk)}); });
+    selectedReminders = new Set(existingDks.length ? existingDks : loadDefaultReminders());
   } else {
     fBaslik.value = "";
     fDers.value = "";
+    fNotlar.value = "";
+    selectedPriority = "orta";
     fTarih.value = (dayKeyForNew || localDayKey(new Date())) + "T09:00";
+    selectedReminders = new Set(loadDefaultReminders());
   }
+  renderPriorityChips();
+  renderReminderChips();
   overlay.classList.add("open");
   setTimeout(() => fBaslik.focus(), 50);
 }
-function closeModal(){
-  overlay.classList.remove("open");
-  editingId = null;
-}
+function closeModal(){ overlay.classList.remove("open"); editingId = null; }
 
 document.getElementById("addBtn").addEventListener("click", () => openModal(null));
 document.getElementById("cancelBtn").addEventListener("click", closeModal);
@@ -530,6 +710,7 @@ overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(
 document.getElementById("saveBtn").addEventListener("click", async () => {
   const baslik = fBaslik.value.trim();
   const ders = fDers.value.trim();
+  const notlar = fNotlar.value.trim();
   const localVal = fTarih.value;
   if (!baslik || !localVal){
     alert("Lütfen ödev adı ve teslim tarihi gir.");
@@ -537,16 +718,21 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   }
   const utcVal = new Date(localVal).toISOString().slice(0,16);
 
+  let eskiHatirlatma = {};
   if (editingId){
-    await updateDoc(doc(db, "odevler", editingId), {
-      baslik, ders, teslim_tarihi: utcVal
-    });
+    const it = items.find(x => x.id === editingId);
+    (it.hatirlatmalar || []).forEach(h => { eskiHatirlatma[h.dk] = h.gonderildi; });
+  }
+  const hatirlatmalar = Array.from(selectedReminders).sort((a,b)=>b-a).map(dk => ({
+    dk, gonderildi: eskiHatirlatma.hasOwnProperty(dk) ? eskiHatirlatma[dk] : false
+  }));
+
+  const payload = { baslik, ders, teslim_tarihi: utcVal, oncelik: selectedPriority, notlar, hatirlatmalar };
+
+  if (editingId){
+    await updateDoc(doc(db, "odevler", editingId), payload);
   } else {
-    await addDoc(odevlerRef, {
-      baslik, ders, teslim_tarihi: utcVal,
-      gonderildi: false, tamamlandi: false,
-      olusturulma: new Date().toISOString()
-    });
+    await addDoc(odevlerRef, Object.assign({gonderildi:false, tamamlandi:false, olusturulma:new Date().toISOString()}, payload));
   }
   closeModal();
 });
@@ -560,6 +746,7 @@ deleteBtn.addEventListener("click", async () => {
 });
 
 renderCalendar();
+renderPriorityChips();
 </script>
 </body>
 </html>
