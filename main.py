@@ -19,10 +19,13 @@ else:
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# WhatsApp API Bilgilerin
-ACCESS_TOKEN = "EAAiWcZCaZBZCSwBSegdkV9fwWPXA5caPZC9MTYdxZAgyuy8oniYBvTqOXvhtmDVD77eqZBcB7L0kbn214cRqHODQnFXG7ZBjFZABqQC9PwoHZAr9RAeRH81fMeQ0rBu5W07EztnHvMYzuqUFzSwGeOupZAuUouHEdisHU4nYti0oV3GXtfGVy5cePmhDeZAF5pqU47T8tFZCQYPaVVdtZChKvf1BHoffaI7RJxOmgYnx7jsBNxyvpZA6sHaNjwtEhYbNwT74ZB9WH2Avi9NZC8BKmZBUwhfsP6dYTRwZDZD"
+# WhatsApp API Bilgilerin (token artık Render env variable'ından okunuyor)
+ACCESS_TOKEN = os.environ.get("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = "1327842940416253"
 RECIPIENT_PHONE = "905060308430"
+
+if not ACCESS_TOKEN:
+    raise RuntimeError("WHATSAPP_TOKEN environment variable eksik!")
 
 
 def send_whatsapp(message_text):
@@ -57,8 +60,6 @@ def check_assignments():
 
     gonderilen_sayisi = 0
 
-    hatalar = []
-
     for doc in query:
         data = doc.to_dict()
         teslim_tarihi = data.get("teslim_tarihi")
@@ -78,9 +79,9 @@ def check_assignments():
                 odevler_ref.document(doc.id).update({"gonderildi": True})
                 gonderilen_sayisi += 1
             else:
-                hatalar.append({"doc_id": doc.id, "status": res.status_code, "detay": res.text})
+                print(f"WhatsApp gönderim hatası ({doc.id}): {res.status_code} {res.text}")
 
-    return jsonify({"status": "ok", "gonderilen_bildirim": gonderilen_sayisi, "hatalar": hatalar})
+    return jsonify({"status": "ok", "gonderilen_bildirim": gonderilen_sayisi})
 
 
 if __name__ == "__main__":
