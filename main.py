@@ -17,63 +17,54 @@ else:
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-ACCESS_TOKEN = os.environ.get("WHATSAPP_TOKEN")
-PHONE_NUMBER_ID = "1327842940416253"
-RECIPIENT_PHONE = "905060308430"
-VERIFY_TOKEN = os.environ.get("WEBHOOK_VERIFY_TOKEN", "odevtakip123")
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_VERIFY_TOKEN", "odevtakip123")
 
-if not ACCESS_TOKEN:
-    raise RuntimeError("WHATSAPP_TOKEN environment variable eksik!")
+if not BOT_TOKEN:
+    raise RuntimeError("TELEGRAM_BOT_TOKEN environment variable eksik!")
+if not CHAT_ID:
+    raise RuntimeError("TELEGRAM_CHAT_ID environment variable eksik!")
+
+TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 ZAMAN_FORMAT = "%Y-%m-%dT%H:%M"
 ZAMAN_FORMAT_SANIYE = "%Y-%m-%dT%H:%M:%S"
 
 
-def send_whatsapp(message_text):
-    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
-    headers = {
-        "Authorization": f"Bearer {ACCESS_TOKEN}",
-        "Content-Type": "application/json",
-    }
+def send_telegram(message_text):
     payload = {
-        "messaging_product": "whatsapp",
-        "to": RECIPIENT_PHONE,
-        "type": "text",
-        "text": {"body": message_text},
+        "chat_id": CHAT_ID,
+        "text": message_text,
+        "parse_mode": "Markdown",
     }
-    return requests.post(url, headers=headers, json=payload)
+    return requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
 
 
-def send_whatsapp_interactive(message_text, doc_id):
+def send_telegram_interactive(message_text, doc_id):
     """Tamamlandı butonlu mesaj gönderir."""
-    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
-    headers = {
-        "Authorization": f"Bearer {ACCESS_TOKEN}",
-        "Content-Type": "application/json",
-    }
     payload = {
-        "messaging_product": "whatsapp",
-        "to": RECIPIENT_PHONE,
-        "type": "interactive",
-        "interactive": {
-            "type": "button",
-            "body": {"text": message_text},
-            "action": {
-                "buttons": [
-                    {
-                        "type": "reply",
-                        "reply": {"id": f"done_{doc_id}", "title": "✅ Tamamlandı"},
-                    }
-                ]
-            },
+        "chat_id": CHAT_ID,
+        "text": message_text,
+        "parse_mode": "Markdown",
+        "reply_markup": {
+            "inline_keyboard": [[
+                {"text": "✅ Tamamlandı", "callback_data": f"done_{doc_id}"}
+            ]]
         },
     }
-    res = requests.post(url, headers=headers, json=payload)
+    res = requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
     if res.status_code != 200:
-        # Interactive başarısız olursa düz metin dene (ör. 24 saat penceresi dışıysa)
         print(f"Interactive gönderim hatası: {res.status_code} {res.text}")
-        return send_whatsapp(message_text)
+        return send_telegram(message_text)
     return res
+
+
+def answer_callback_query(callback_query_id, text=None):
+    payload = {"callback_query_id": callback_query_id}
+    if text:
+        payload["text"] = text
+    requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json=payload)
 
 
 def sure_metni(dakika):
@@ -131,7 +122,7 @@ def gunluk_liste_gonder():
         .where("teslim_tarihi", "<=", end)
         .stream()
     )
-    send_whatsapp(liste_metni("📅 *Bugünkü Ödevler*", docs))
+    send_telegram(liste_metni("📅 *Bugünkü Ödevler*", docs))
 
 
 def haftalik_liste_gonder():
@@ -145,7 +136,7 @@ def haftalik_liste_gonder():
         .where("teslim_tarihi", "<=", end)
         .stream()
     )
-    send_whatsapp(liste_metni("🗓️ *Bu Haftaki Ödevler*", docs))
+    send_telegram(liste_metni("🗓️ *Bu Haftaki Ödevler*", docs))
 
 
 @app.route("/", methods=["GET"])
@@ -153,41 +144,30 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/webhook", methods=["GET"])
-def webhook_verify():
-    mode = request.args.get("hub.mode")
-    token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge")
-    if mode == "subscribe" and token == VERIFY_TOKEN:
-        return challenge, 200
-    return "Forbidden", 403
-
-
 @app.route("/webhook", methods=["POST"])
 def webhook_receive():
+    secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+    if secret != WEBHOOK_SECRET:
+        return "Forbidden", 403
+
     data = request.get_json(silent=True) or {}
     print(f"[DEBUG] Gelen webhook verisi: {json.dumps(data, ensure_ascii=False)}")
     try:
-        entry = data["entry"][0]["changes"][0]["value"]
-        messages = entry.get("messages")
-        if not messages:
-            return jsonify({"status": "ignored"}), 200
-        msg = messages[0]
-
-        if msg.get("type") == "interactive":
-            btn = msg.get("interactive", {}).get("button_reply", {})
-            btn_id = btn.get("id", "")
-            if btn_id.startswith("done_"):
-                doc_id = btn_id[len("done_"):]
+        if "callback_query" in data:
+            cq = data["callback_query"]
+            cq_data = cq.get("data", "")
+            if cq_data.startswith("done_"):
+                doc_id = cq_data[len("done_"):]
                 db.collection("odevler").document(doc_id).update({"tamamlandi": True})
-                send_whatsapp("✅ Ödev tamamlandı olarak işaretlendi, hatırlatmalar durduruldu.")
+                answer_callback_query(cq["id"], "Tamamlandı olarak işaretlendi ✅")
+                send_telegram("✅ Ödev tamamlandı olarak işaretlendi, hatırlatmalar durduruldu.")
 
-        elif msg.get("type") == "text":
-            text = msg.get("text", {}).get("body", "").strip().lower()
+        elif "message" in data:
+            text = data["message"].get("text", "").strip().lower()
             text = text.replace("ü", "u").replace("ğ", "g")
-            if text in ("gun", "bugün", "bugun"):
+            if text in ("gun", "bugün", "bugun", "/gun"):
                 gunluk_liste_gonder()
-            elif text == "hafta":
+            elif text in ("hafta", "/hafta"):
                 haftalik_liste_gonder()
 
     except Exception as e:
@@ -231,14 +211,14 @@ def check_assignments():
                 if not h.get("gonderildi"):
                     tetik_zamani = teslim_dt - timedelta(minutes=dk)
                     if tetik_zamani <= now:
-                        res = send_whatsapp_interactive(mesaj_olustur(data, dk), d.id)
+                        res = send_telegram_interactive(mesaj_olustur(data, dk), d.id)
                         if res.status_code == 200:
                             h = {"dk": dk, "gonderildi": True}
                             degisti = True
                             gonderilen_sayisi += 1
                             ilk_gonderim_bu_turda = True
                         else:
-                            print(f"WhatsApp gönderim hatası ({d.id}, {dk} dk): {res.status_code} {res.text}")
+                            print(f"Telegram gönderim hatası ({d.id}, {dk} dk): {res.status_code} {res.text}")
                 yeni_liste.append(h)
             if degisti:
                 odevler_ref.document(d.id).update(
@@ -246,7 +226,7 @@ def check_assignments():
                 )
         else:
             if not data.get("gonderildi") and teslim_tarihi <= now_str:
-                res = send_whatsapp_interactive(mesaj_olustur(data, 0), d.id)
+                res = send_telegram_interactive(mesaj_olustur(data, 0), d.id)
                 if res.status_code == 200:
                     odevler_ref.document(d.id).update(
                         {"gonderildi": True, "son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
@@ -254,7 +234,7 @@ def check_assignments():
                     gonderilen_sayisi += 1
                     ilk_gonderim_bu_turda = True
                 else:
-                    print(f"WhatsApp gönderim hatası ({d.id}): {res.status_code} {res.text}")
+                    print(f"Telegram gönderim hatası ({d.id}): {res.status_code} {res.text}")
 
         # 30 dakikada bir tekrar hatırlatma (ilk mesaj daha önce gitmiş ve tamamlanmamışsa)
         if not ilk_gonderim_bu_turda:
@@ -273,7 +253,7 @@ def check_assignments():
                         pass
                 if tekrar_gerekli:
                     kalan_dk = int((teslim_dt - now).total_seconds() // 60)
-                    res = send_whatsapp_interactive(mesaj_olustur(data, kalan_dk, tekrar=True), d.id)
+                    res = send_telegram_interactive(mesaj_olustur(data, kalan_dk, tekrar=True), d.id)
                     if res.status_code == 200:
                         odevler_ref.document(d.id).update(
                             {"son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
