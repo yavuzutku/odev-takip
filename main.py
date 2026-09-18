@@ -68,8 +68,15 @@ def answer_callback_query(callback_query_id, text=None):
 
 
 def sure_metni(dakika):
-    if dakika <= 0:
-        return "Teslim zamanı geldi!"
+    if dakika < 0:
+        gecikme = abs(dakika)
+        if gecikme < 60:
+            return f"{gecikme} dakika gecikti!"
+        if gecikme < 1440:
+            return f"{gecikme // 60} saat gecikti!"
+        return f"{gecikme // 1440} gün gecikti!"
+    if dakika == 0:
+        return "Tam zamanı!"
     if dakika < 60:
         return f"{dakika} dakika kaldı"
     if dakika < 1440:
@@ -79,8 +86,29 @@ def sure_metni(dakika):
     return f"{gun} gün kaldı"
 
 
+def tekrar_araligi_dakika(teslim_dt, now):
+    """Teslime kalan süreye göre gitgide sıklaşan hatırlatma aralığı (dk)."""
+    kalan_dk = (teslim_dt - now).total_seconds() / 60
+    if kalan_dk < 0:
+        return 15    # süresi geçmiş -> tamamlanana kadar sık sık rahatsız et
+    if kalan_dk <= 60:
+        return 10    # son 1 saat -> çok sık
+    if kalan_dk <= 360:
+        return 30    # son 6 saat
+    if kalan_dk <= 1440:
+        return 120   # son 1 gün
+    return 240       # daha uzun vadeli -> 4 saatte bir
+
+
 def mesaj_olustur(data, dakika, tekrar=False):
-    baslik = "🔁 *HATIRLATMA (tekrar)*" if tekrar else "🚨 *ÖDEV HATIRLATMASI!*"
+    if not tekrar:
+        baslik = "🚨 *ÖDEV HATIRLATMASI!*"
+    elif dakika < 0:
+        baslik = "🔴 *HÂLÂ TAMAMLANMADI!*"
+    elif dakika <= 60:
+        baslik = "🟠 *SON DAKİKA HATIRLATMASI!*"
+    else:
+        baslik = "🔁 *HATIRLATMA (tekrar)*"
     satirlar = [
         baslik,
         "",
@@ -261,18 +289,19 @@ def check_assignments():
                 else:
                     print(f"Telegram gönderim hatası ({d.id}): {res.status_code} {res.text}")
 
-        # 30 dakikada bir tekrar hatırlatma (ilk mesaj daha önce gitmiş ve tamamlanmamışsa)
+        # Tamamlanana kadar sıklığı gitgide artan tekrar hatırlatmaları
         if not ilk_gonderim_bu_turda:
             daha_once_gonderildi = data.get("gonderildi") or any(
                 h.get("gonderildi") for h in (hatirlatmalar or [])
             )
             if daha_once_gonderildi:
                 son = data.get("son_hatirlatma")
+                aralik_dk = tekrar_araligi_dakika(teslim_dt, now)
                 tekrar_gerekli = True
                 if son:
                     try:
                         son_dt = datetime.strptime(son, ZAMAN_FORMAT_SANIYE)
-                        if now - son_dt < timedelta(minutes=30):
+                        if now - son_dt < timedelta(minutes=aralik_dk):
                             tekrar_gerekli = False
                     except ValueError:
                         pass
