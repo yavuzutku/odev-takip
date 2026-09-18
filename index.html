@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ödev Takip Paneli</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#12141c">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ödev Takip">
 <style>
   :root{
     --bg:#12141c;
@@ -194,6 +201,92 @@
     .cal-cell{aspect-ratio:1/0.75;}
     .week-grid{flex-direction:column;}
   }
+
+  /* ---- App-level nav (Takvim / İstatistikler) ---- */
+  .app-nav{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:18px;width:fit-content;}
+  .app-nav button{border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:600;padding:8px 16px;border-radius:9px;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:7px;transition:background .15s,color .15s;}
+  .app-nav button.active{background:var(--accent);color:var(--accent-ink);}
+  .app-nav button:hover:not(.active){color:var(--text);}
+
+  .install-btn{display:none;}
+  .install-btn.show{display:inline-flex;}
+
+  /* ---- Animations ---- */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  .stat-card,.task,.mini-card,.cal-cell{animation:fadeUp .28s ease both;}
+  .view-pane{animation:fadeUp .22s ease both;}
+
+  /* ---- Stat cards (yeni) ---- */
+  .stats-strip{gap:14px;}
+  .stat-card{
+    flex:1;min-width:130px;background:linear-gradient(160deg,var(--surface),var(--surface-hi));
+    border:1px solid var(--border);border-radius:16px;padding:16px 16px 14px;
+    display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;
+  }
+  .stat-card svg{color:var(--accent);opacity:.85;}
+  .stat-card .stat-num{font-family:var(--serif);font-size:24px;font-weight:700;line-height:1;}
+  .stat-card .stat-lbl{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;}
+  .stat-card.danger .stat-num{color:var(--danger);}
+  .stat-card.accent-strong{border-color:rgba(94,234,212,.35);}
+  .stat-card .stat-sub{font-size:11px;color:var(--text-dim);}
+
+  /* ---- İstatistik sayfası ---- */
+  .stats-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start;}
+  @media (max-width:900px){.stats-grid{grid-template-columns:1fr;}}
+  .panel-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;}
+  .panel-card h3{font-family:var(--serif);font-size:16px;margin:0 0 14px;font-weight:600;}
+  .bar-chart{display:flex;align-items:flex-end;gap:10px;height:160px;padding-top:8px;}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;height:100%;}
+  .bar-track{flex:1;width:100%;max-width:30px;display:flex;flex-direction:column-reverse;justify-content:flex-start;background:var(--bg-soft);border-radius:7px;overflow:hidden;}
+  .bar-fill{width:100%;background:linear-gradient(180deg,var(--accent),#38c2ab);border-radius:7px 7px 0 0;transition:height .4s ease;}
+  .bar-day-label{font-size:11px;color:var(--text-faint);}
+  .bar-count{font-size:11px;color:var(--text-dim);font-weight:600;}
+
+  .donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .donut-legend{display:flex;flex-direction:column;gap:8px;flex:1;min-width:140px;}
+  .legend-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);}
+  .legend-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .legend-row b{color:var(--text);}
+
+  .streak-box{display:flex;align-items:center;gap:14px;}
+  .streak-flame{width:46px;height:46px;border-radius:14px;background:radial-gradient(circle at 30% 20%, #ffb454, #f97b6b);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 4px 14px rgba(249,123,107,.35);}
+  .streak-num{font-family:var(--serif);font-size:26px;font-weight:700;}
+  .streak-lbl{font-size:12px;color:var(--text-faint);}
+
+  .subject-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .subject-bar-row:last-child{margin-bottom:0;}
+  .subject-bar-name{width:88px;flex:none;font-size:12px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .subject-bar-track{flex:1;height:8px;background:var(--bg-soft);border-radius:5px;overflow:hidden;}
+  .subject-bar-fill{height:100%;border-radius:5px;}
+  .subject-bar-count{width:26px;flex:none;text-align:right;font-size:11.5px;color:var(--text-faint);}
+
+  .empty-note{font-size:13px;color:var(--text-faint);padding:10px 0;}
+
+  /* ---- Toast ---- */
+  .toast-stack{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:100;align-items:center;}
+  .toast{background:var(--surface-hi);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);animation:toastIn .18s ease both;display:flex;align-items:center;gap:8px;}
+  .toast.ok{border-color:rgba(94,234,212,.4);}
+  @keyframes toastIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---- Mobile bottom nav + FAB ---- */
+  .mobile-bottom-nav{display:none;}
+  @media (max-width:640px){
+    .app{padding-bottom:84px;}
+    .mobile-bottom-nav{
+      display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+      border-top:1px solid var(--border);z-index:60;padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    }
+    .mobile-bottom-nav button{flex:1;background:none;border:none;color:var(--text-faint);font-size:10.5px;
+      display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer;font-family:var(--sans);}
+    .mobile-bottom-nav button.active{color:var(--accent);}
+    .fab{
+      position:fixed;right:16px;bottom:74px;width:52px;height:52px;border-radius:16px;
+      background:var(--accent);color:var(--accent-ink);border:none;display:flex;align-items:center;justify-content:center;
+      box-shadow:0 10px 24px rgba(94,234,212,.35);cursor:pointer;z-index:60;
+    }
+    .topbar-right .btn-accent#addBtn, .topbar .month-nav{display:none;}
+    .topbar-right{gap:8px;}
+  }
 </style>
 </head>
 <body>
@@ -221,6 +314,10 @@
           <button class="view-tab" data-view="gun" type="button">Gün</button>
         </div>
         <button class="btn btn-ghost" id="todayBtn">Bugün</button>
+        <button class="btn btn-ghost install-btn" id="installBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Yükle
+        </button>
         <button class="btn btn-accent" id="addBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
           Yeni
@@ -228,27 +325,85 @@
       </div>
     </div>
 
+    <div class="app-nav" id="appNav">
+      <button class="active" data-pane="takvim" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Takvim
+      </button>
+      <button data-pane="istatistik" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        İstatistikler
+      </button>
+    </div>
+
     <div class="stats-strip" id="statsStrip"></div>
 
-    <div class="layout">
-      <section class="calendar-panel">
-        <div class="weekday-row" id="weekdayRow">
-          <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
-        </div>
-        <div class="cal-grid" id="calGrid"></div>
-        <div class="week-grid" id="weekGrid" style="display:none;"></div>
-        <div class="day-timeline" id="dayTimeline" style="display:none;"></div>
-      </section>
+    <div class="view-pane" id="paneTakvim">
+      <div class="layout">
+        <section class="calendar-panel">
+          <div class="weekday-row" id="weekdayRow">
+            <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="week-grid" id="weekGrid" style="display:none;"></div>
+          <div class="day-timeline" id="dayTimeline" style="display:none;"></div>
+        </section>
 
-      <aside class="agenda-panel">
-        <div class="search-row">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <input type="text" id="searchInput" placeholder="Ödev veya ders ara...">
-        </div>
-        <div class="chip-row subjects" id="subjectFilters"></div>
-        <div id="agendaContent"></div>
-      </aside>
+        <aside class="agenda-panel">
+          <div class="search-row">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="text" id="searchInput" placeholder="Ödev veya ders ara...">
+          </div>
+          <div class="chip-row subjects" id="subjectFilters"></div>
+          <div id="agendaContent"></div>
+        </aside>
+      </div>
     </div>
+
+    <div class="view-pane" id="paneIstatistik" style="display:none;">
+      <div class="stats-grid">
+        <div class="panel-card">
+          <h3>Son 7 gün — tamamlanan</h3>
+          <div class="bar-chart" id="weeklyBarChart"></div>
+        </div>
+        <div class="panel-card">
+          <h3>Seri (streak)</h3>
+          <div class="streak-box">
+            <div class="streak-flame">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2c1 3-3 4-3 8a3 3 0 006 0c0-1.5-1-2-1-2 2 0 3 2 3 4a5 5 0 01-10 0c0-4 3-5 5-10z" fill="#12141c"/></svg>
+            </div>
+            <div>
+              <div class="streak-num" id="streakNum">0</div>
+              <div class="streak-lbl">gün üst üste tamamlama</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-card">
+          <h3>Derslere göre dağılım</h3>
+          <div class="donut-wrap" id="donutWrap"></div>
+        </div>
+        <div class="panel-card">
+          <h3>Ders bazlı yoğunluk</h3>
+          <div id="subjectBars"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack"></div>
+
+  <button class="fab" id="mobileFab" aria-label="Yeni ekle">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>
+  </button>
+  <div class="mobile-bottom-nav" id="mobileNav">
+    <button class="active" data-pane="takvim" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Takvim
+    </button>
+    <button data-pane="istatistik" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      İstatistik
+    </button>
   </div>
 
   <div class="modal-overlay" id="modalOverlay">
@@ -738,12 +893,139 @@ function renderStats(){
   const wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate()+7);
   const weekItems = items.filter(it => { const d = toLocalDate(it.teslim_tarihi); return d >= wStart && d < wEnd; });
   const weekDone = weekItems.filter(it => it.tamamlandi).length;
+  const totalDone = items.filter(it => it.tamamlandi).length;
+  const oran = items.length ? Math.round((totalDone/items.length)*100) : 0;
+
+  const iconClock = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const iconWarn = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const iconCheck = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const iconPct = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 19l6-6M4 19h6v-6M20 5l-6 6M20 5h-6v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   const strip = document.getElementById("statsStrip");
   strip.innerHTML =
-    '<div class="stat"><b>'+active.length+'</b><span>Bekleyen</span></div>' +
-    '<div class="stat'+(gecikenSayi>0?" danger":"")+'"><b>'+gecikenSayi+'</b><span>Geciken</span></div>' +
-    '<div class="stat"><b>'+weekDone+'/'+weekItems.length+'</b><span>Bu hafta tamamlanan</span></div>';
+    '<div class="stat-card">'+iconClock+'<div class="stat-num">'+active.length+'</div><div class="stat-lbl">Bekleyen</div></div>' +
+    '<div class="stat-card'+(gecikenSayi>0?" danger":"")+'">'+iconWarn+'<div class="stat-num">'+gecikenSayi+'</div><div class="stat-lbl">Geciken</div></div>' +
+    '<div class="stat-card">'+iconCheck+'<div class="stat-num">'+weekDone+'/'+weekItems.length+'</div><div class="stat-lbl">Bu Hafta Tamamlanan</div></div>' +
+    '<div class="stat-card accent-strong">'+iconPct+'<div class="stat-num">%'+oran+'</div><div class="stat-lbl">Genel Tamamlanma</div></div>';
+}
+
+function toast(msg, ok){
+  const stack = document.getElementById("toastStack");
+  const el = document.createElement("div");
+  el.className = "toast"+(ok?" ok":"");
+  el.textContent = msg;
+  stack.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = "opacity .2s, transform .2s";
+    el.style.opacity = "0";
+    el.style.transform = "translateY(8px)";
+    setTimeout(() => el.remove(), 200);
+  }, 1800);
+}
+
+function computeStreak(){
+  const byDay = {};
+  items.filter(it => it.tur !== "etkinlik").forEach(it => {
+    const key = localDayKey(toLocalDate(it.teslim_tarihi));
+    (byDay[key] = byDay[key] || []).push(it);
+  });
+  let streak = 0, emptyRun = 0;
+  let cur = new Date(); cur.setHours(0,0,0,0);
+  for (let i = 0; i < 365; i++){
+    const key = localDayKey(cur);
+    const dayItems = byDay[key];
+    if (dayItems && dayItems.length){
+      emptyRun = 0;
+      if (dayItems.every(it => it.tamamlandi)) streak++;
+      else break;
+    } else {
+      emptyRun++;
+      if (emptyRun > 30) break;
+    }
+    cur.setDate(cur.getDate()-1);
+  }
+  return streak;
+}
+
+function renderWeeklyBarChart(){
+  const wrap = document.getElementById("weeklyBarChart");
+  if (!wrap) return;
+  const dayNames = ["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = [];
+  for (let i = 6; i >= 0; i--){ const d = new Date(today); d.setDate(d.getDate()-i); days.push(d); }
+  const byDay = {};
+  items.filter(it => it.tur !== "etkinlik").forEach(it => {
+    const key = localDayKey(toLocalDate(it.teslim_tarihi));
+    (byDay[key] = byDay[key] || []).push(it);
+  });
+  const counts = days.map(d => {
+    const arr = byDay[localDayKey(d)] || [];
+    return { done: arr.filter(x => x.tamamlandi).length, total: arr.length };
+  });
+  const max = Math.max(1, ...counts.map(c => Math.max(c.done, c.total)));
+  wrap.innerHTML = days.map((d,i) => {
+    const c = counts[i];
+    const h = Math.max(3, Math.round((c.done/max)*100));
+    return '<div class="bar-col">' +
+      '<div class="bar-count">'+c.done+'</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="height:'+h+'%"></div></div>' +
+      '<div class="bar-day-label">'+dayNames[d.getDay()]+'</div>' +
+    '</div>';
+  }).join("");
+}
+
+function renderDonut(){
+  const wrap = document.getElementById("donutWrap");
+  if (!wrap) return;
+  const counts = {};
+  items.forEach(it => { const k = it.ders || "Genel"; counts[k] = (counts[k]||0)+1; });
+  const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  if (!entries.length){ wrap.innerHTML = '<div class="empty-note">Henüz veri yok.</div>'; return; }
+  const total = entries.reduce((s,e) => s+e[1], 0);
+  let acc = 0;
+  const r = 44, cx = 56, cy = 56, circumference = 2*Math.PI*r;
+  const segs = entries.map(([name,count]) => {
+    const frac = count/total;
+    const dash = frac*circumference;
+    const gap = circumference-dash;
+    const rotate = (acc/total)*360;
+    acc += count;
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+colorFor(name)+'" stroke-width="15" ' +
+      'stroke-dasharray="'+dash.toFixed(1)+' '+gap.toFixed(1)+'" transform="rotate('+(rotate-90)+' '+cx+' '+cy+')"/>';
+  }).join("");
+  const svg = '<svg width="112" height="112" viewBox="0 0 112 112">'+segs+'</svg>';
+  const legend = entries.map(([name,count]) =>
+    '<div class="legend-row"><span class="legend-dot" style="background:'+colorFor(name)+'"></span>'+escapeHtml(name)+' <b>('+count+')</b></div>'
+  ).join("");
+  wrap.innerHTML = svg + '<div class="donut-legend">'+legend+'</div>';
+}
+
+function renderSubjectBars(){
+  const wrap = document.getElementById("subjectBars");
+  if (!wrap) return;
+  const bySubj = {};
+  items.forEach(it => { const k = it.ders || "Genel"; (bySubj[k] = bySubj[k] || []).push(it); });
+  const entries = Object.entries(bySubj).sort((a,b) => b[1].length-a[1].length);
+  if (!entries.length){ wrap.innerHTML = '<div class="empty-note">Henüz veri yok.</div>'; return; }
+  const maxCount = Math.max(...entries.map(([,arr]) => arr.length));
+  wrap.innerHTML = entries.map(([name,arr]) => {
+    const w = Math.round((arr.length/maxCount)*100);
+    return '<div class="subject-bar-row">' +
+      '<div class="subject-bar-name">'+escapeHtml(name)+'</div>' +
+      '<div class="subject-bar-track"><div class="subject-bar-fill" style="width:'+w+'%;background:'+colorFor(name)+'"></div></div>' +
+      '<div class="subject-bar-count">'+arr.length+'</div>' +
+    '</div>';
+  }).join("");
+}
+
+function renderStatsPage(){
+  const el = document.getElementById("streakNum");
+  if (!el) return;
+  el.textContent = computeStreak();
+  renderWeeklyBarChart();
+  renderDonut();
+  renderSubjectBars();
 }
 
 function renderSubjectFilters(){
@@ -869,6 +1151,7 @@ function renderAll(){
   renderCalendar();
   renderAgenda();
   updateDersListe();
+  renderStatsPage();
 }
 
 const q = query(odevlerRef, orderBy("teslim_tarihi", "asc"));
@@ -1065,7 +1348,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   const notlar = fNotlar.value.trim();
   const localVal = fTarih.value;
   if (!baslik || !localVal){
-    alert("Lütfen başlık ve tarih gir.");
+    toast("Lütfen başlık ve tarih gir.");
     return;
   }
   const utcVal = new Date(localVal).toISOString().slice(0,16);
@@ -1092,8 +1375,10 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 
   if (editingId){
     await updateDoc(doc(db, "odevler", editingId), payload);
+    toast("Kaydedildi ✓", true);
   } else {
     await addDoc(odevlerRef, Object.assign({gonderildi:false, tamamlandi:false, olusturulma:new Date().toISOString()}, payload));
+    toast("Eklendi ✓", true);
   }
   closeModal();
 });
@@ -1103,11 +1388,50 @@ deleteBtn.addEventListener("click", async () => {
   if (confirm("Bu kaydı silmek istediğine emin misin?")){
     await deleteDoc(doc(db, "odevler", editingId));
     closeModal();
+    toast("Silindi", false);
   }
 });
 
 renderCalendar();
 renderPriorityChips();
+
+// ---- Pane switching (Takvim / İstatistikler) ----
+function switchPane(pane){
+  document.getElementById("paneTakvim").style.display = pane === "takvim" ? "" : "none";
+  document.getElementById("paneIstatistik").style.display = pane === "istatistik" ? "" : "none";
+  document.getElementById("statsStrip").style.display = pane === "istatistik" ? "none" : "flex";
+  document.querySelectorAll("#appNav button, #mobileNav button").forEach(b => {
+    b.classList.toggle("active", b.getAttribute("data-pane") === pane);
+  });
+  if (pane === "istatistik") renderStatsPage();
+}
+document.querySelectorAll("#appNav button, #mobileNav button").forEach(b => {
+  b.addEventListener("click", () => switchPane(b.getAttribute("data-pane")));
+});
+document.getElementById("mobileFab").addEventListener("click", () => openModal(null));
+
+// ---- PWA: service worker + install prompt ----
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
+}
+let deferredPrompt = null;
+const installBtn = document.getElementById("installBtn");
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.classList.add("show");
+});
+installBtn.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.classList.remove("show");
+});
+window.addEventListener("appinstalled", () => {
+  installBtn.classList.remove("show");
+  toast("Uygulama kuruldu 🎉", true);
+});
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@ import json
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 import requests
 
 app = Flask(__name__, template_folder=".")
@@ -142,6 +142,31 @@ def haftalik_liste_gonder():
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
+
+
+@app.route("/manifest.json", methods=["GET"])
+def manifest():
+    return send_from_directory(".", "manifest.json", mimetype="application/manifest+json")
+
+
+@app.route("/sw.js", methods=["GET"])
+def service_worker():
+    return send_from_directory(".", "sw.js", mimetype="application/javascript")
+
+
+@app.route("/icon-192.png", methods=["GET"])
+def icon_192():
+    return send_from_directory(".", "icon-192.png", mimetype="image/png")
+
+
+@app.route("/icon-512.png", methods=["GET"])
+def icon_512():
+    return send_from_directory(".", "icon-512.png", mimetype="image/png")
+
+
+@app.route("/icon-512-maskable.png", methods=["GET"])
+def icon_512_maskable():
+    return send_from_directory(".", "icon-512-maskable.png", mimetype="image/png")
 
 
 @app.route("/webhook", methods=["POST"])
