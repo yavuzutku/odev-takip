@@ -42,14 +42,15 @@ def send_telegram(message_text):
 
 
 def send_telegram_interactive(message_text, doc_id):
-    """Tamamlandı butonlu mesaj gönderir."""
+    """Tamamlandı / Ertele butonlu mesaj gönderir."""
     payload = {
         "chat_id": CHAT_ID,
         "text": message_text,
         "parse_mode": "Markdown",
         "reply_markup": {
             "inline_keyboard": [[
-                {"text": "✅ Tamamlandı", "callback_data": f"done_{doc_id}"}
+                {"text": "✅ Tamamlandı", "callback_data": f"done_{doc_id}"},
+                {"text": "⏰ Ertele", "callback_data": f"snooze_{doc_id}"},
             ]]
         },
     }
@@ -58,6 +59,21 @@ def send_telegram_interactive(message_text, doc_id):
         print(f"Interactive gönderim hatası: {res.status_code} {res.text}")
         return send_telegram(message_text)
     return res
+
+
+def send_snooze_options(doc_id):
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": "⏰ Ne kadar ertelensin?",
+        "reply_markup": {
+            "inline_keyboard": [[
+                {"text": "30 dk", "callback_data": f"snooze30_{doc_id}"},
+                {"text": "1 saat", "callback_data": f"snooze60_{doc_id}"},
+                {"text": "Yarın", "callback_data": f"snoozetom_{doc_id}"},
+            ]]
+        },
+    }
+    requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
 
 
 def answer_callback_query(callback_query_id, text=None):
@@ -140,6 +156,41 @@ def liste_metni(baslik, docs):
     return "\n".join(satirlar).strip()
 
 
+def ertele_odev(doc_id, dakika=None, yarina=False):
+    ref = db.collection("odevler").document(doc_id)
+    snap = ref.get()
+    if not snap.exists:
+        return None
+    data = snap.to_dict()
+    eski = datetime.strptime(data["teslim_tarihi"], ZAMAN_FORMAT)
+    now = datetime.utcnow()
+    baslangic = max(eski, now)
+
+    if yarina:
+        yeni = now + timedelta(days=1)
+        yeni = yeni.replace(hour=eski.hour, minute=eski.minute, second=0, microsecond=0)
+    else:
+        yeni = baslangic + timedelta(minutes=dakika)
+
+    ref.update({
+        "teslim_tarihi": yeni.strftime(ZAMAN_FORMAT),
+        "gonderildi": False,
+        "son_hatirlatma": None,
+    })
+    return data, yeni
+
+
+def yardim_metni():
+    return (
+        "🤖 *Komutlar*\n\n"
+        "📅 *gun* – bugünkü ödevler\n"
+        "🗓️ *hafta* – bu haftaki ödevler\n"
+        "📋 *hepsi* – tüm bekleyen ödevler\n"
+        "❓ *yardim* – bu mesaj\n\n"
+        "Hatırlatma mesajındaki *Ertele* butonuyla bir ödevi 30 dk, 1 saat ya da yarına erteleyebilirsin."
+    )
+
+
 def gunluk_liste_gonder():
     now = datetime.utcnow()
     start = now.strftime("%Y-%m-%dT00:00")
@@ -165,6 +216,12 @@ def haftalik_liste_gonder():
         .stream()
     )
     send_telegram(liste_metni("🗓️ *Bu Haftaki Ödevler*", docs))
+
+
+def tum_bekleyenler_gonder():
+    docs = [d for d in db.collection("odevler").stream() if not d.to_dict().get("tamamlandi")]
+    docs.sort(key=lambda d: d.to_dict().get("teslim_tarihi") or "")
+    send_telegram(liste_metni("📋 *Tüm Bekleyen Ödevler*", docs))
 
 
 @app.route("/", methods=["GET"])
@@ -209,19 +266,53 @@ def webhook_receive():
         if "callback_query" in data:
             cq = data["callback_query"]
             cq_data = cq.get("data", "")
+
             if cq_data.startswith("done_"):
                 doc_id = cq_data[len("done_"):]
                 db.collection("odevler").document(doc_id).update({"tamamlandi": True})
                 answer_callback_query(cq["id"], "Tamamlandı olarak işaretlendi ✅")
                 send_telegram("✅ Ödev tamamlandı olarak işaretlendi, hatırlatmalar durduruldu.")
 
+            elif cq_data.startswith("snooze30_"):
+                doc_id = cq_data[len("snooze30_"):]
+                sonuc = ertele_odev(doc_id, dakika=30)
+                answer_callback_query(cq["id"], "30 dakika ertelendi")
+                if sonuc:
+                    eski_data, yeni = sonuc
+                    send_telegram(f"⏰ *{eski_data.get('baslik')}* 30 dakika ertelendi.\n🗓️ Yeni zaman: {yeni.strftime(ZAMAN_FORMAT)}")
+
+            elif cq_data.startswith("snooze60_"):
+                doc_id = cq_data[len("snooze60_"):]
+                sonuc = ertele_odev(doc_id, dakika=60)
+                answer_callback_query(cq["id"], "1 saat ertelendi")
+                if sonuc:
+                    eski_data, yeni = sonuc
+                    send_telegram(f"⏰ *{eski_data.get('baslik')}* 1 saat ertelendi.\n🗓️ Yeni zaman: {yeni.strftime(ZAMAN_FORMAT)}")
+
+            elif cq_data.startswith("snoozetom_"):
+                doc_id = cq_data[len("snoozetom_"):]
+                sonuc = ertele_odev(doc_id, yarina=True)
+                answer_callback_query(cq["id"], "Yarına ertelendi")
+                if sonuc:
+                    eski_data, yeni = sonuc
+                    send_telegram(f"⏰ *{eski_data.get('baslik')}* yarına ertelendi.\n🗓️ Yeni zaman: {yeni.strftime(ZAMAN_FORMAT)}")
+
+            elif cq_data.startswith("snooze_"):
+                doc_id = cq_data[len("snooze_"):]
+                answer_callback_query(cq["id"])
+                send_snooze_options(doc_id)
+
         elif "message" in data:
             text = data["message"].get("text", "").strip().lower()
-            text = text.replace("ü", "u").replace("ğ", "g")
+            text = text.replace("ü", "u").replace("ğ", "g").replace("ı", "i")
             if text in ("gun", "bugün", "bugun", "/gun"):
                 gunluk_liste_gonder()
             elif text in ("hafta", "/hafta"):
                 haftalik_liste_gonder()
+            elif text in ("hepsi", "tumu", "/hepsi"):
+                tum_bekleyenler_gonder()
+            elif text in ("yardim", "/yardim", "/help", "yardım"):
+                send_telegram(yardim_metni())
 
     except Exception as e:
         print(f"Webhook işleme hatası: {e}")
