@@ -166,6 +166,7 @@ def webhook_verify():
 @app.route("/webhook", methods=["POST"])
 def webhook_receive():
     data = request.get_json(silent=True) or {}
+    print(f"[DEBUG] Gelen webhook verisi: {json.dumps(data, ensure_ascii=False)}")
     try:
         entry = data["entry"][0]["changes"][0]["value"]
         messages = entry.get("messages")
