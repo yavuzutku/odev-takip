@@ -90,22 +90,26 @@
   .calendar-panel{flex:1.5;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;min-width:0;}
   .weekday-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px;}
   .weekday-row div{text-align:center;font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
   .cal-cell{
-    aspect-ratio:1/0.92;border-radius:12px;border:1px solid var(--border-soft);
-    background:var(--bg-soft);padding:8px 8px 6px;display:flex;flex-direction:column;
+    min-height:118px;border-radius:10px;border:1px solid var(--border-soft);
+    background:var(--bg-soft);padding:6px 6px 5px;display:flex;flex-direction:column;gap:4px;
     cursor:pointer;transition:background .15s,border-color .15s;position:relative;
   }
   .cal-cell:hover{background:var(--surface-hi);border-color:#333a52;}
-  .cal-cell.dim{opacity:.35;}
+  .cal-cell.dim{opacity:.45;}
   .cal-cell.today{border-color:var(--accent);box-shadow:var(--ring);}
   .cal-cell.drop-target{background:var(--surface-hi);border-color:var(--accent);outline:1.5px dashed var(--accent);}
-  .cal-day-num{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--text);line-height:1;}
-  .cal-cell.today .cal-day-num{color:var(--accent);}
+  .cal-cell-head{display:flex;align-items:center;justify-content:space-between;}
+  .cal-day-num{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--text);line-height:1;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;flex:none;}
+  .cal-cell.today .cal-day-num{background:var(--accent);color:var(--accent-ink);}
   .cal-cell.has-overdue .cal-day-num{color:var(--danger);}
-  .cal-dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;}
-  .cal-dot{width:6px;height:6px;border-radius:50%;flex:none;}
-  .cal-more{font-size:10px;color:var(--text-faint);}
+  .cal-chips{display:flex;flex-direction:column;gap:3px;flex:1;min-height:0;overflow:hidden;}
+  .month-chip{font-size:10.5px;font-weight:600;padding:3px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.45;transition:filter .12s;}
+  .month-chip:hover{filter:brightness(1.12);}
+  .month-chip.done{opacity:.5;text-decoration:line-through;}
+  .cal-more-btn{background:none;border:none;color:var(--text-faint);font-size:10px;font-weight:700;text-align:left;cursor:pointer;padding:1px 5px;font-family:var(--sans);}
+  .cal-more-btn:hover{color:var(--text);}
 
   .week-grid{display:flex;gap:8px;min-height:420px;}
   .week-col{flex:1;min-width:0;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;transition:background .15s,border-color .15s;}
@@ -198,7 +202,7 @@
   @media (max-width:860px){
     .layout{flex-direction:column;}
     .agenda-panel{position:static;width:100%;}
-    .cal-cell{aspect-ratio:1/0.75;}
+    .cal-cell{min-height:74px;}
     .week-grid{flex-direction:column;}
   }
 
@@ -287,6 +291,39 @@
     .topbar-right .btn-accent#addBtn, .topbar .month-nav{display:none;}
     .topbar-right{gap:8px;}
   }
+
+  /* ---- Day popover ("+N tane daha") ---- */
+  .day-popover{
+    width:260px;max-width:88vw;background:var(--surface-hi);border:1px solid var(--border);
+    border-radius:14px;padding:12px;box-shadow:0 16px 44px rgba(0,0,0,.5);
+  }
+  .day-popover-head{display:flex;align-items:center;justify-content:space-between;font-family:var(--serif);font-size:14px;font-weight:600;margin-bottom:8px;}
+  .day-popover-close{background:none;border:none;color:var(--text-faint);font-size:19px;cursor:pointer;line-height:1;padding:0 4px;}
+  .day-popover-close:hover{color:var(--text);}
+  .day-popover-list{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow-y:auto;margin-bottom:8px;}
+  .day-popover-item{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:8px;cursor:pointer;font-size:12.5px;}
+  .day-popover-item:hover{background:var(--surface);}
+  .dpi-dot{width:7px;height:7px;border-radius:50%;flex:none;}
+  .dpi-time{color:var(--text-faint);font-size:11px;flex:none;width:38px;}
+  .dpi-title{color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dpi-title.done{color:var(--text-faint);text-decoration:line-through;}
+  .day-popover-add{width:100%;background:var(--bg-soft);border:1px dashed var(--border);color:var(--text-dim);font-size:12px;padding:7px;border-radius:8px;cursor:pointer;font-family:var(--sans);}
+  .day-popover-add:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ---- Right-click context menu ---- */
+  .ctx-menu{
+    position:fixed;background:var(--surface-hi);border:1px solid var(--border);border-radius:11px;
+    padding:5px;box-shadow:0 16px 44px rgba(0,0,0,.5);min-width:180px;z-index:120;
+  }
+  .ctx-item{
+    width:100%;display:flex;align-items:center;gap:9px;background:none;border:none;color:var(--text);
+    font-size:12.5px;padding:8px 9px;border-radius:7px;cursor:pointer;font-family:var(--sans);text-align:left;
+  }
+  .ctx-item:hover{background:var(--surface);}
+  .ctx-item.danger{color:var(--danger);}
+  .ctx-item.danger:hover{background:var(--danger-soft);}
+  .ctx-item svg{flex:none;opacity:.9;}
+  .ctx-sep{height:1px;background:var(--border);margin:4px 2px;}
 </style>
 </head>
 <body>
@@ -465,6 +502,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-danger-ghost" id="deleteBtn" style="display:none;">Sil</button>
+        <button class="btn btn-ghost" id="duplicateBtn" style="display:none;">Kopyala</button>
         <button class="btn btn-ghost" id="cancelBtn">İptal</button>
         <button class="btn btn-accent" id="saveBtn">Kaydet</button>
       </div>
@@ -516,6 +554,12 @@ function setCategoryColor(ders, color){
   const key = (ders || "Genel").trim() || "Genel";
   categoryColors[key] = color;
   saveCategoryColorsToStorage(categoryColors);
+}
+function textColorFor(hex){
+  const c = (hex || "#5eead4").replace("#", "");
+  const r = parseInt(c.substring(0,2),16), g = parseInt(c.substring(2,4),16), b = parseInt(c.substring(4,6),16);
+  const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return lum > 0.62 ? "#12141c" : "#ffffff";
 }
 
 const PRESET_REMINDERS = [
@@ -643,6 +687,35 @@ function expandItemsForRange(baseItems, rangeStart, rangeEnd){
   return out;
 }
 
+// Bir olayı (çok günlü olabilir) kapsadığı her takvim gününe tek tek dağıtır — ay görünümü için.
+function splitOccurrencesByDay(occs, rangeStart, rangeEnd){
+  const out = [];
+  occs.forEach(o => {
+    const segStart = o._occStart;
+    const dayStart0 = new Date(segStart.getFullYear(), segStart.getMonth(), segStart.getDate());
+    let endExclusive = new Date(dayStart0.getTime() + 86400000);
+    if (o._occEnd && o._occEnd > segStart){
+      const eDay = new Date(o._occEnd.getFullYear(), o._occEnd.getMonth(), o._occEnd.getDate());
+      const spansIntoNext = (o._occEnd.getHours() > 0 || o._occEnd.getMinutes() > 0);
+      endExclusive = new Date(eDay.getTime() + (spansIntoNext ? 86400000 : 0));
+      if (endExclusive <= dayStart0) endExclusive = new Date(dayStart0.getTime() + 86400000);
+    }
+    const isMultiDay = (endExclusive - dayStart0) > 86400000;
+    let cur = new Date(dayStart0.getTime());
+    while (cur < endExclusive){
+      if (cur >= rangeStart && cur < rangeEnd){
+        out.push(Object.assign({}, o, {
+          _dayKey: localDayKey(cur),
+          _isSpanStart: cur.getTime() === dayStart0.getTime(),
+          _isMultiDay: isMultiDay
+        }));
+      }
+      cur = new Date(cur.getTime() + 86400000);
+    }
+  });
+  return out;
+}
+
 // ---- Drag & drop moves ----
 function moveItemToDay(id, dayKey){
   const it = items.find(x => x.id === id);
@@ -682,6 +755,165 @@ document.addEventListener("dragend", (e) => {
   const card = e.target.closest("[data-drag-id]");
   if (card) card.classList.remove("dragging");
 });
+
+// ---- Day popover ("+N tane daha") ----
+let dayPopoverEl = null;
+function closeDayPopover(){
+  if (dayPopoverEl){ dayPopoverEl.remove(); dayPopoverEl = null; }
+}
+function openDayPopover(key, anchorEl, dayItemsForKey){
+  closeDayPopover();
+  closeContextMenu();
+  const d = new Date(key + "T00:00:00");
+  const pop = document.createElement("div");
+  pop.className = "day-popover";
+  pop.style.position = "fixed";
+  pop.innerHTML =
+    '<div class="day-popover-head">' + fmtDayLabel(d) + '<button type="button" class="day-popover-close" aria-label="Kapat">&times;</button></div>' +
+    '<div class="day-popover-list">' +
+      dayItemsForKey.map(o =>
+        '<div class="day-popover-item" data-open="' + o.id + '"><span class="dpi-dot" style="background:' + colorFor(o.ders) + '"></span>' +
+        '<span class="dpi-time">' + (o._isMultiDay && !o._isSpanStart ? "" : fmtTime(o._occStart)) + '</span>' +
+        '<span class="dpi-title' + (o.tamamlandi ? " done" : "") + '">' + escapeHtml(o.baslik || "(başlıksız)") + '</span></div>'
+      ).join("") +
+    '</div>' +
+    '<button type="button" class="day-popover-add">+ Bu güne ekle</button>';
+  document.body.appendChild(pop);
+  const rect = anchorEl.getBoundingClientRect();
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let left = rect.left, top = rect.bottom + 6;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, rect.top - ph - 6);
+  pop.style.left = Math.max(8, left) + "px";
+  pop.style.top = Math.max(8, top) + "px";
+  pop.querySelector(".day-popover-close").addEventListener("click", closeDayPopover);
+  pop.querySelector(".day-popover-add").addEventListener("click", () => { closeDayPopover(); openModal(null, key); });
+  pop.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", () => { closeDayPopover(); openModal(el.getAttribute("data-open")); }));
+  dayPopoverEl = pop;
+}
+
+// ---- Right-click context menu: kopyala / yapıştır / tamamla / sil ----
+let ctxMenuEl = null;
+let clipboardItem = null;
+let hoverDayKey = null;
+let hoverChipId = null;
+
+function closeContextMenu(){
+  if (ctxMenuEl){ ctxMenuEl.remove(); ctxMenuEl = null; }
+}
+function openContextMenu(x, y, options){
+  closeContextMenu();
+  closeDayPopover();
+  const menu = document.createElement("div");
+  menu.className = "ctx-menu";
+  menu.innerHTML = options.map((o,i) => o.divider ? '<div class="ctx-sep"></div>' :
+    '<button type="button" class="ctx-item' + (o.danger ? " danger" : "") + '" data-idx="' + i + '">' + o.icon + '<span>' + o.label + '</span></button>'
+  ).join("");
+  document.body.appendChild(menu);
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  let left = x, top = y;
+  if (left + mw > window.innerWidth - 8) left = window.innerWidth - mw - 8;
+  if (top + mh > window.innerHeight - 8) top = window.innerHeight - mh - 8;
+  menu.style.left = Math.max(8,left) + "px";
+  menu.style.top = Math.max(8,top) + "px";
+  options.forEach((o,i) => {
+    if (o.divider) return;
+    menu.querySelector('[data-idx="'+i+'"]').addEventListener("click", () => { closeContextMenu(); o.onClick(); });
+  });
+  ctxMenuEl = menu;
+}
+document.addEventListener("click", (e) => {
+  if (ctxMenuEl && !e.target.closest(".ctx-menu")) closeContextMenu();
+  if (dayPopoverEl && !e.target.closest(".day-popover") && !e.target.closest(".cal-more-btn")) closeDayPopover();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape"){ closeContextMenu(); closeDayPopover(); }
+});
+
+const ICON_EDIT = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_COPY = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1" stroke="currentColor" stroke-width="2"/></svg>';
+const ICON_PASTE = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="6" y="4" width="12" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 4V2h6v2" stroke="currentColor" stroke-width="2"/></svg>';
+const ICON_CHECK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_TRASH = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ICON_PLUS = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+
+function copyItemToClipboard(it){
+  const start = toLocalDate(it.teslim_tarihi);
+  clipboardItem = {
+    baslik: it.baslik, ders: it.ders, tur: it.tur, oncelik: it.oncelik, notlar: it.notlar || "",
+    _h: start.getHours(), _m: start.getMinutes(),
+    _durMs: it.bitis_tarihi ? (toLocalDate(it.bitis_tarihi) - start) : 0,
+  };
+}
+async function pasteClipboardToDay(dayKey){
+  if (!clipboardItem) return;
+  const [y,m,d] = dayKey.split("-").map(Number);
+  const start = new Date(y, m-1, d, clipboardItem._h, clipboardItem._m);
+  const payload = {
+    baslik: clipboardItem.baslik, ders: clipboardItem.ders, tur: clipboardItem.tur,
+    oncelik: clipboardItem.oncelik, notlar: clipboardItem.notlar,
+    teslim_tarihi: start.toISOString().slice(0,16),
+    tekrar: { tip: "yok", bitis: null },
+    hatirlatmalar: loadDefaultReminders().map(dk => ({dk, gonderildi:false})),
+    gonderildi: false, tamamlandi: false, olusturulma: new Date().toISOString(),
+  };
+  if (clipboardItem._durMs){
+    payload.bitis_tarihi = new Date(start.getTime() + clipboardItem._durMs).toISOString().slice(0,16);
+  } else {
+    payload.bitis_tarihi = null;
+  }
+  await addDoc(odevlerRef, payload);
+  toast("Yapıştırıldı ✓", true);
+}
+
+document.addEventListener("mouseover", (e) => {
+  const chip = e.target.closest("[data-drag-id]");
+  if (chip) hoverChipId = chip.getAttribute("data-drag-id");
+  const dayEl = e.target.closest("[data-daykey]");
+  if (dayEl) hoverDayKey = dayEl.getAttribute("data-daykey");
+});
+
+document.addEventListener("keydown", (e) => {
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+  const tag = document.activeElement ? document.activeElement.tagName : "";
+  if (tag === "INPUT" || tag === "TEXTAREA") return;
+  if (e.key.toLowerCase() === "c" && hoverChipId){
+    const it = items.find(x => x.id === hoverChipId);
+    if (it){ copyItemToClipboard(it); toast("Kopyalandı — bir güne Ctrl+V yapıştır", true); }
+  }
+  if (e.key.toLowerCase() === "v" && clipboardItem && hoverDayKey){
+    e.preventDefault();
+    pasteClipboardToDay(hoverDayKey);
+  }
+});
+
+document.addEventListener("contextmenu", (e) => {
+  const chip = e.target.closest(".month-chip, .mini-card, .task, .day-popover-item");
+  if (chip){
+    const id = chip.getAttribute("data-open") || chip.getAttribute("data-drag-id");
+    const it = items.find(x => x.id === id);
+    if (!it) return;
+    e.preventDefault();
+    openContextMenu(e.clientX, e.clientY, [
+      {icon: ICON_EDIT, label: "Düzenle", onClick: () => openModal(id)},
+      {icon: ICON_COPY, label: "Kopyala", onClick: () => { copyItemToClipboard(it); toast("Kopyalandı — bir güne sağ tıklayıp Yapıştır'ı seç", true); }},
+      {icon: ICON_CHECK, label: it.tamamlandi ? "Tamamlanmadı yap" : "Tamamlandı yap", onClick: () => updateDoc(doc(db,"odevler",id), {tamamlandi: !it.tamamlandi})},
+      {divider:true},
+      {icon: ICON_TRASH, label: "Sil", danger:true, onClick: () => { if (confirm("Bu kaydı silmek istediğine emin misin?")) deleteDoc(doc(db,"odevler",id)); }},
+    ]);
+    return;
+  }
+  const dayEl = e.target.closest("[data-daykey]");
+  if (dayEl){
+    e.preventDefault();
+    const key = dayEl.getAttribute("data-daykey");
+    const opts = [{icon: ICON_PLUS, label: "Yeni ekle", onClick: () => openModal(null, key)}];
+    if (clipboardItem) opts.push({icon: ICON_PASTE, label: "Yapıştır", onClick: () => pasteClipboardToDay(key)});
+    openContextMenu(e.clientX, e.clientY, opts);
+  }
+});
+
 
 // ---- Period title / nav ----
 function renderPeriodTitle(){
@@ -735,23 +967,36 @@ function renderMonthView(){
   const rangeStart = new Date(cells[0].y, cells[0].m, cells[0].day);
   const rangeEnd = new Date(cells[cells.length-1].y, cells[cells.length-1].m, cells[cells.length-1].day+1);
   const occs = expandItemsForRange(visibleItems(), rangeStart, rangeEnd);
+  const dayOccs = splitOccurrencesByDay(occs, rangeStart, rangeEnd);
   const byDay = {};
-  occs.forEach(o => { const key = localDayKey(o._occStart); (byDay[key] = byDay[key] || []).push(o); });
+  dayOccs.forEach(o => { (byDay[o._dayKey] = byDay[o._dayKey] || []).push(o); });
+  Object.values(byDay).forEach(arr => arr.sort((a,b) => a._occStart - b._occStart));
 
+  const MAX_VISIBLE = 3;
   cells.forEach(c => {
     const key = c.y + "-" + String(c.m+1).padStart(2,"0") + "-" + String(c.day).padStart(2,"0");
-    const dayItems = byDay[key] || [];
-    const hasOverdue = dayItems.some(it => it.tur !== "etkinlik" && !it.tamamlandi && it.teslim_tarihi <= nowUtcStr());
+    const dItems = byDay[key] || [];
+    const hasOverdue = dItems.some(it => it.tur !== "etkinlik" && !it.tamamlandi && it.teslim_tarihi <= nowUtcStr());
 
     const cell = document.createElement("div");
     cell.className = "cal-cell" + (c.dim ? " dim" : "") + (key===todayKey ? " today":"") + (hasOverdue?" has-overdue":"");
+    cell.setAttribute("data-daykey", key);
+    const visible = dItems.slice(0, MAX_VISIBLE);
+    const rest = dItems.length - visible.length;
     cell.innerHTML =
-      '<div class="cal-day-num">' + c.day + '</div>' +
-      '<div class="cal-dots">' +
-        dayItems.slice(0,4).map(it => '<span class="cal-dot" style="background:'+colorFor(it.ders)+'"></span>').join("") +
-        (dayItems.length > 4 ? '<span class="cal-more">+'+(dayItems.length-4)+'</span>' : "") +
+      '<div class="cal-cell-head"><span class="cal-day-num">' + c.day + '</span></div>' +
+      '<div class="cal-chips">' +
+        visible.map(monthChipHtml).join("") +
+        (rest > 0 ? '<button type="button" class="cal-more-btn">+' + rest + ' tane daha</button>' : "") +
       '</div>';
-    cell.addEventListener("click", () => openModal(null, key));
+    cell.addEventListener("click", (e) => {
+      if (e.target.closest(".month-chip")) return;
+      if (e.target.closest(".cal-more-btn")){ openDayPopover(key, cell, dItems); return; }
+      openModal(null, key);
+    });
+    cell.querySelectorAll(".month-chip").forEach(chipEl => {
+      chipEl.addEventListener("click", (e) => { e.stopPropagation(); openModal(chipEl.getAttribute("data-open")); });
+    });
     cell.addEventListener("dragover", (e) => { e.preventDefault(); cell.classList.add("drop-target"); });
     cell.addEventListener("dragleave", () => cell.classList.remove("drop-target"));
     cell.addEventListener("drop", (e) => {
@@ -761,6 +1006,17 @@ function renderMonthView(){
     });
     grid.appendChild(cell);
   });
+}
+
+function monthChipHtml(o){
+  const bg = colorFor(o.ders);
+  const txt = textColorFor(bg);
+  const label = o._isMultiDay && !o._isSpanStart ? "› " + (o.baslik || "(başlıksız)") : (o.tamamlandi ? "" : fmtTime(o._occStart) + " ") + (o.baslik || "(başlıksız)");
+  return '<div class="month-chip' + (o.tamamlandi ? " done" : "") + '" data-open="' + o.id + '"' +
+    (o._virtual ? '' : ' draggable="true" data-drag-id="' + o.id + '"') +
+    ' style="background:' + bg + ';color:' + txt + '" title="' + escapeHtml(o.baslik || "") + '">' +
+    escapeHtml(label) +
+  '</div>';
 }
 
 function renderWeekView(){
@@ -778,6 +1034,7 @@ function renderWeekView(){
     const dayOccs = occs.filter(o => localDayKey(o._occStart) === key).sort((a,b)=> a._occStart - b._occStart);
     const col = document.createElement("div");
     col.className = "week-col" + (key===todayKey ? " today" : "");
+    col.setAttribute("data-daykey", key);
     col.innerHTML =
       '<div class="week-col-head">'+dayNames[i]+' <span>'+d.getDate()+'</span></div>'+
       '<div class="week-col-body">'+ dayOccs.map(weekCardHtml).join("") +'</div>';
@@ -809,6 +1066,7 @@ function renderDayView(){
   for (let h = 0; h < 24; h++){
     const row = document.createElement("div");
     row.className = "day-hour-row";
+    row.setAttribute("data-daykey", localDayKey(dayStart));
     const hourItems = byHour[h] || [];
     row.innerHTML =
       '<div class="day-hour-label">'+String(h).padStart(2,"0")+':00</div>'+
@@ -1210,6 +1468,7 @@ const fBitis = document.getElementById("fBitis");
 const fTekrarBitis = document.getElementById("fTekrarBitis");
 const fNotlar = document.getElementById("fNotlar");
 const deleteBtn = document.getElementById("deleteBtn");
+const duplicateBtn = document.getElementById("duplicateBtn");
 const reminderChipsEl = document.getElementById("reminderChips");
 const priorityChipsEl = document.getElementById("priorityChips");
 const typeChipsEl = document.getElementById("typeChips");
@@ -1294,6 +1553,7 @@ function openModal(id, dayKeyForNew){
   extraReminderChips = [];
   document.getElementById("modalTitle").textContent = id ? "Kaydı Düzenle" : "Yeni Kayıt";
   deleteBtn.style.display = id ? "inline-flex" : "none";
+  duplicateBtn.style.display = id ? "inline-flex" : "none";
 
   if (id){
     const it = items.find(x => x.id === id);
@@ -1390,6 +1650,21 @@ deleteBtn.addEventListener("click", async () => {
     closeModal();
     toast("Silindi", false);
   }
+});
+
+duplicateBtn.addEventListener("click", async () => {
+  if (!editingId) return;
+  const it = items.find(x => x.id === editingId);
+  if (!it) return;
+  const payload = Object.assign({}, it);
+  delete payload.id;
+  payload.gonderildi = false;
+  payload.tamamlandi = false;
+  payload.olusturulma = new Date().toISOString();
+  if (payload.hatirlatmalar) payload.hatirlatmalar = payload.hatirlatmalar.map(h => ({dk: h.dk, gonderildi:false}));
+  await addDoc(odevlerRef, payload);
+  toast("Kopyalandı ✓", true);
+  closeModal();
 });
 
 renderCalendar();
