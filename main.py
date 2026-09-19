@@ -20,6 +20,10 @@ db = firestore.client()
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_VERIFY_TOKEN", "odevtakip123")
+APP_API_TOKEN = os.environ.get("APP_API_TOKEN", WEBHOOK_SECRET)
+DAILY_SUMMARY_HOUR_UTC = int(os.environ.get("DAILY_SUMMARY_HOUR_UTC", "5"))  # 05:00 UTC = 08:00 Türkiye
+WAKE_START_HOUR = int(os.environ.get("WAKE_START_HOUR", "8"))
+WAKE_END_HOUR = int(os.environ.get("WAKE_END_HOUR", "23"))
 
 if not BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN environment variable eksik!")
@@ -224,6 +228,114 @@ def tum_bekleyenler_gonder():
     send_telegram(liste_metni("📋 *Tüm Bekleyen Ödevler*", docs))
 
 
+def parse_dt(s, fmt=ZAMAN_FORMAT):
+    try:
+        return datetime.strptime(s, fmt)
+    except (ValueError, TypeError):
+        return None
+
+
+def gunun_bosluklarini_hesapla(gun_baslangic, gun_bitis):
+    """gun_baslangic/gun_bitis: aynı günün datetime sınırları (UTC, naive).
+    Uyanık saatler penceresi içinde dolu aralıkları çıkarıp boşlukları döndürür."""
+    wake_start = gun_baslangic.replace(hour=WAKE_START_HOUR, minute=0, second=0, microsecond=0)
+    wake_end = gun_baslangic.replace(hour=WAKE_END_HOUR, minute=0, second=0, microsecond=0)
+
+    busy = []
+    docs = db.collection("odevler").stream()
+    for d in docs:
+        data = d.to_dict()
+        if data.get("tamamlandi"):
+            continue
+        start = parse_dt(data.get("teslim_tarihi"))
+        if not start:
+            continue
+        sure_dk = data.get("sure_dk") or 30
+        end = parse_dt(data.get("bitis_tarihi")) if data.get("bitis_tarihi") else None
+        if not end:
+            end = start + timedelta(minutes=sure_dk)
+        if end <= wake_start or start >= wake_end:
+            continue
+        busy.append((max(start, wake_start), min(end, wake_end)))
+
+    busy.sort(key=lambda x: x[0])
+    merged = []
+    for b in busy:
+        if merged and b[0] <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], b[1]))
+        else:
+            merged.append(b)
+
+    free = []
+    cur = wake_start
+    for b in merged:
+        if b[0] > cur:
+            free.append((cur, b[0]))
+        cur = max(cur, b[1])
+    if cur < wake_end:
+        free.append((cur, wake_end))
+
+    return [(s, e) for s, e in free if (e - s).total_seconds() >= 20 * 60]
+
+
+def gunluk_ozet_kontrol_et():
+    """check-assignments her çağrıldığında bir kez, günde tek sefer boşluk özeti gönderir."""
+    now = datetime.utcnow()
+    if now.hour != DAILY_SUMMARY_HOUR_UTC:
+        return
+    ayarlar_ref = db.collection("ayarlar").document("gunluk_ozet")
+    snap = ayarlar_ref.get()
+    bugun_str = now.strftime("%Y-%m-%d")
+    if snap.exists and snap.to_dict().get("son_gonderim") == bugun_str:
+        return
+
+    gun_baslangic = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    gun_bitis = gun_baslangic + timedelta(days=1)
+    bosluklar = gunun_bosluklarini_hesapla(gun_baslangic, gun_bitis)
+
+    if bosluklar:
+        satirlar = ["☀️ *Günaydın! Bugünkü boş zamanların:*", ""]
+        for s, e in bosluklar:
+            satirlar.append(f"🕐 {s.strftime('%H:%M')} – {e.strftime('%H:%M')}")
+        satirlar.append("")
+        satirlar.append("Bu aralıklarda ödev/görev planlayabilirsin 👍")
+        send_telegram("\n".join(satirlar))
+
+    ayarlar_ref.set({"son_gonderim": bugun_str})
+
+
+@app.route("/api/notify", methods=["POST"])
+def api_notify():
+    token = request.headers.get("X-App-Token")
+    if token != APP_API_TOKEN:
+        return "Forbidden", 403
+    data = request.get_json(silent=True) or {}
+    text = (data.get("message") or "").strip()
+    if not text:
+        return jsonify({"status": "error", "detay": "message boş"}), 400
+    res = send_telegram(text)
+    ok = res.status_code == 200
+    return jsonify({"status": "ok" if ok else "error"}), (200 if ok else 502)
+
+
+@app.route("/api/free-slots", methods=["GET"])
+def api_free_slots():
+    gun_str = request.args.get("gun")  # YYYY-MM-DD, opsiyonel
+    if gun_str:
+        try:
+            gun_baslangic = datetime.strptime(gun_str, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({"status": "error"}), 400
+    else:
+        gun_baslangic = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    gun_bitis = gun_baslangic + timedelta(days=1)
+    bosluklar = gunun_bosluklarini_hesapla(gun_baslangic, gun_bitis)
+    return jsonify({
+        "status": "ok",
+        "bosluklar": [{"baslangic": s.strftime(ZAMAN_FORMAT), "bitis": e.strftime(ZAMAN_FORMAT)} for s, e in bosluklar]
+    })
+
+
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
@@ -335,6 +447,9 @@ def check_assignments():
         if data.get("tamamlandi"):
             continue
 
+        if data.get("bildirim_kapali"):
+            continue
+
         teslim_tarihi = data.get("teslim_tarihi")
         if not teslim_tarihi:
             continue
@@ -406,6 +521,11 @@ def check_assignments():
                         gonderilen_sayisi += 1
                     else:
                         print(f"Tekrar hatırlatma hatası ({d.id}): {res.status_code} {res.text}")
+
+    try:
+        gunluk_ozet_kontrol_et()
+    except Exception as e:
+        print(f"Günlük özet hatası: {e}")
 
     return jsonify({"status": "ok", "gonderilen_bildirim": gonderilen_sayisi})
 
