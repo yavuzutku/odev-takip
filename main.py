@@ -22,8 +22,17 @@ CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_VERIFY_TOKEN", "odevtakip123")
 APP_API_TOKEN = os.environ.get("APP_API_TOKEN", WEBHOOK_SECRET)
 DAILY_SUMMARY_HOUR_UTC = int(os.environ.get("DAILY_SUMMARY_HOUR_UTC", "5"))  # 05:00 UTC = 08:00 Türkiye
-WAKE_START_HOUR = int(os.environ.get("WAKE_START_HOUR", "8"))
-WAKE_END_HOUR = int(os.environ.get("WAKE_END_HOUR", "23"))
+# Veritabanındaki tarihler UTC saklanır; müsaitlik hesabı yerel saatle yapılır (Türkiye = UTC+3, yaz saati yok).
+LOCAL_TZ_OFFSET_HOURS = int(os.environ.get("LOCAL_TZ_OFFSET_HOURS", "3"))
+
+# Varsayılan haftalık müsaitlik programı (yerel saat, gece yarısından itibaren dakika).
+# Bu aralıkların DIŞINDA kalan zaman meşgul sayılır (okul, sabah meşguliyeti, uyku).
+# Yine de bu saatlere etkinlik/görev eklenebilir; sadece "boş zaman" hesabı bunları baz alır.
+MUSAITLIK = {
+    "hafta_ici":  (15 * 60 + 30, 24 * 60),  # okul 08:00-15:30 -> müsait 15:30-00:00
+    "hafta_sonu": (13 * 60,      24 * 60),  # 13:00'e kadar meşgul -> müsait 13:00-00:00
+}
+MIN_BOSLUK_DK = 20  # bundan kısa boşluklar listelenmez
 
 if not BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN environment variable eksik!")
@@ -235,28 +244,87 @@ def parse_dt(s, fmt=ZAMAN_FORMAT):
         return None
 
 
-def gunun_bosluklarini_hesapla(gun_baslangic, gun_bitis):
-    """gun_baslangic/gun_bitis: aynı günün datetime sınırları (UTC, naive).
-    Uyanık saatler penceresi içinde dolu aralıkları çıkarıp boşlukları döndürür."""
-    wake_start = gun_baslangic.replace(hour=WAKE_START_HOUR, minute=0, second=0, microsecond=0)
-    wake_end = gun_baslangic.replace(hour=WAKE_END_HOUR, minute=0, second=0, microsecond=0)
+def yerel_simdi():
+    return datetime.utcnow() + timedelta(hours=LOCAL_TZ_OFFSET_HOURS)
+
+
+def utc_to_yerel(dt):
+    return dt + timedelta(hours=LOCAL_TZ_OFFSET_HOURS)
+
+
+def musaitlik_penceresi(yerel_gun):
+    """Günün varsayılan müsait aralığı (yerel saat): hafta içi okul sonrası, hafta sonu öğleden sonra."""
+    anahtar = "hafta_sonu" if yerel_gun.weekday() >= 5 else "hafta_ici"
+    bas_dk, bit_dk = MUSAITLIK[anahtar]
+    gun0 = yerel_gun.replace(hour=0, minute=0, second=0, microsecond=0)
+    return gun0 + timedelta(minutes=bas_dk), gun0 + timedelta(minutes=bit_dk)
+
+
+def tekrar_zamanlari(baslangic, tekrar, aralik_bas, aralik_son):
+    """İstemcideki ruleOccurrences ile aynı mantık. Hepsi yerel saat (naive datetime)."""
+    tip = (tekrar or {}).get("tip") or "yok"
+    if tip == "yok":
+        return [baslangic] if aralik_bas <= baslangic < aralik_son else []
+
+    limit = aralik_son
+    bitis_str = (tekrar or {}).get("bitis")
+    if bitis_str:
+        try:
+            limit = datetime.strptime(bitis_str + "T23:59", ZAMAN_FORMAT)
+        except ValueError:
+            pass
+
+    out = []
+    cur = baslangic
+    guard = 0
+    while cur <= limit and cur < aralik_son and guard < 2000:
+        guard += 1
+        if cur >= aralik_bas and (tip != "hafta_ici" or cur.weekday() < 5):
+            out.append(cur)
+        if tip == "haftalik":
+            cur += timedelta(days=7)
+        elif tip == "hafta_ici":
+            cur += timedelta(days=1)
+        elif tip == "aylik_ilk_gun":
+            yil = cur.year + (1 if cur.month == 12 else 0)
+            ay = cur.month % 12 + 1
+            cur = cur.replace(year=yil, month=ay, day=1)
+        else:
+            break
+    return out
+
+
+def gunun_bosluklarini_hesapla(yerel_gun):
+    """yerel_gun: hesaplanacak günün (yerel saat) herhangi bir datetime'ı.
+    Varsayılan müsaitlik penceresinden, o güne denk gelen dolu aralıkları çıkarıp
+    boşlukları (yerel saat) döndürür."""
+    pencere_bas, pencere_son = musaitlik_penceresi(yerel_gun)
+    gun0 = yerel_gun.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Önceki günlerde başlayıp bugüne uzanan çok günlü etkinlikler de yakalansın
+    aralik_bas = gun0 - timedelta(days=7)
+    aralik_son = gun0 + timedelta(days=1)
 
     busy = []
-    docs = db.collection("odevler").stream()
-    for d in docs:
+    for d in db.collection("odevler").stream():
         data = d.to_dict()
         if data.get("tamamlandi"):
             continue
-        start = parse_dt(data.get("teslim_tarihi"))
-        if not start:
+        start_utc = parse_dt(data.get("teslim_tarihi"))
+        if not start_utc:
             continue
-        sure_dk = data.get("sure_dk") or 30
-        end = parse_dt(data.get("bitis_tarihi")) if data.get("bitis_tarihi") else None
-        if not end:
-            end = start + timedelta(minutes=sure_dk)
-        if end <= wake_start or start >= wake_end:
-            continue
-        busy.append((max(start, wake_start), min(end, wake_end)))
+        start = utc_to_yerel(start_utc)
+
+        end_utc = parse_dt(data.get("bitis_tarihi")) if data.get("bitis_tarihi") else None
+        if end_utc and end_utc > start_utc:
+            sure = end_utc - start_utc
+        else:
+            sure = timedelta(minutes=data.get("sure_dk") or 30)
+
+        for occ in tekrar_zamanlari(start, data.get("tekrar"), aralik_bas, aralik_son):
+            occ_end = occ + sure
+            if occ_end <= pencere_bas or occ >= pencere_son:
+                continue
+            busy.append((max(occ, pencere_bas), min(occ_end, pencere_son)))
 
     busy.sort(key=lambda x: x[0])
     merged = []
@@ -267,15 +335,15 @@ def gunun_bosluklarini_hesapla(gun_baslangic, gun_bitis):
             merged.append(b)
 
     free = []
-    cur = wake_start
+    cur = pencere_bas
     for b in merged:
         if b[0] > cur:
             free.append((cur, b[0]))
         cur = max(cur, b[1])
-    if cur < wake_end:
-        free.append((cur, wake_end))
+    if cur < pencere_son:
+        free.append((cur, pencere_son))
 
-    return [(s, e) for s, e in free if (e - s).total_seconds() >= 20 * 60]
+    return [(s, e) for s, e in free if (e - s).total_seconds() >= MIN_BOSLUK_DK * 60]
 
 
 def gunluk_ozet_kontrol_et():
@@ -289,9 +357,7 @@ def gunluk_ozet_kontrol_et():
     if snap.exists and snap.to_dict().get("son_gonderim") == bugun_str:
         return
 
-    gun_baslangic = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    gun_bitis = gun_baslangic + timedelta(days=1)
-    bosluklar = gunun_bosluklarini_hesapla(gun_baslangic, gun_bitis)
+    bosluklar = gunun_bosluklarini_hesapla(yerel_simdi())
 
     if bosluklar:
         satirlar = ["☀️ *Günaydın! Bugünkü boş zamanların:*", ""]
@@ -320,18 +386,18 @@ def api_notify():
 
 @app.route("/api/free-slots", methods=["GET"])
 def api_free_slots():
-    gun_str = request.args.get("gun")  # YYYY-MM-DD, opsiyonel
+    gun_str = request.args.get("gun")  # YYYY-MM-DD (yerel gün), opsiyonel
     if gun_str:
         try:
-            gun_baslangic = datetime.strptime(gun_str, "%Y-%m-%d")
+            gun = datetime.strptime(gun_str, "%Y-%m-%d")
         except ValueError:
             return jsonify({"status": "error"}), 400
     else:
-        gun_baslangic = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    gun_bitis = gun_baslangic + timedelta(days=1)
-    bosluklar = gunun_bosluklarini_hesapla(gun_baslangic, gun_bitis)
+        gun = yerel_simdi()
+    bosluklar = gunun_bosluklarini_hesapla(gun)
     return jsonify({
         "status": "ok",
+        "saat_dilimi": f"UTC{LOCAL_TZ_OFFSET_HOURS:+d}",
         "bosluklar": [{"baslangic": s.strftime(ZAMAN_FORMAT), "bitis": e.strftime(ZAMAN_FORMAT)} for s, e in bosluklar]
     })
 

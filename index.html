@@ -568,6 +568,11 @@
         <label for="fBitis">Bitiş Tarihi ve Saati</label>
         <input type="datetime-local" id="fBitis">
       </div>
+      <div class="field" id="fSureSaatField" style="display:none;">
+        <label for="fSureSaat">Tahmini Süre (saat)</label>
+        <input type="number" id="fSureSaat" min="0.25" step="0.25" placeholder="1">
+        <div class="field-hint" id="fSureSaatHint" style="display:none;"></div>
+      </div>
       <div class="field" id="fSureField">
         <label for="fSure">Tahmini Süre (dakika)</label>
         <input type="number" id="fSure" min="5" step="5" placeholder="30">
@@ -824,11 +829,26 @@ function toLocalInputValue(d){
 }
 
 // ---- Boş zaman hesaplama (istemci tarafı) ----
-function dayFreeWindows(dayStart, wakeStartHour, wakeEndHour){
-  const wakeS = new Date(dayStart); wakeS.setHours(wakeStartHour,0,0,0);
-  const wakeE = new Date(dayStart); wakeE.setHours(wakeEndHour,0,0,0);
+// Varsayılan haftalık müsaitlik programı (gece yarısından itibaren dakika).
+// Bu aralıkların DIŞINDAKİ zaman meşgul sayılır (okul, sabah meşguliyeti, uyku).
+// Yine de bu saatlere etkinlik/görev eklenebilir; sadece "boş zaman" hesabı bunu baz alır.
+const MUSAITLIK = {
+  haftaIci:  { from: 15*60 + 30, to: 24*60 },  // okul 08:00–15:30 → müsait 15:30–00:00
+  haftaSonu: { from: 13*60,      to: 24*60 },  // 13:00'e kadar meşgul → müsait 13:00–00:00
+};
+function availabilityFor(dayStart){
+  const wd = dayStart.getDay();
+  return (wd === 0 || wd === 6) ? MUSAITLIK.haftaSonu : MUSAITLIK.haftaIci;
+}
+// notBefore verilirse (örn. bugün için "şu an") o andan önceki kısım boş sayılmaz.
+function dayFreeWindows(dayStart, notBefore){
+  const av = availabilityFor(dayStart);
+  const wakeS = new Date(dayStart); wakeS.setHours(0, av.from, 0, 0);
+  const wakeE = new Date(dayStart); wakeE.setHours(0, av.to, 0, 0);
   const rangeEnd = new Date(dayStart); rangeEnd.setDate(rangeEnd.getDate()+1);
-  const occs = expandItemsForRange(items.filter(it => !it.tamamlandi), dayStart, rangeEnd);
+  // Önceki günlerde başlayıp bugüne uzanan çok günlü etkinlikler de yakalansın
+  const rangeStart = new Date(dayStart); rangeStart.setDate(rangeStart.getDate()-7);
+  const occs = expandItemsForRange(items.filter(it => !it.tamamlandi), rangeStart, rangeEnd);
   let busy = occs.map(o => {
     const s = o._occStart;
     const e = o._occEnd || new Date(s.getTime() + (itemDurationMinutes(o) || 30)*60000);
@@ -845,7 +865,9 @@ function dayFreeWindows(dayStart, wakeStartHour, wakeEndHour){
   let cur = new Date(wakeS);
   merged.forEach(([s,e]) => { if (s > cur) free.push([new Date(cur), new Date(s)]); cur = new Date(Math.max(cur, e)); });
   if (cur < wakeE) free.push([new Date(cur), new Date(wakeE)]);
-  return free.filter(([s,e]) => (e-s) >= 20*60000);
+  return free
+    .map(([s,e]) => [notBefore && s < notBefore ? new Date(notBefore) : s, e])
+    .filter(([s,e]) => (e-s) >= 20*60000);
 }
 function findFreeSlotBefore(deadline, sureDk, searchStart){
   let day = new Date(searchStart); day.setHours(0,0,0,0);
@@ -853,7 +875,7 @@ function findFreeSlotBefore(deadline, sureDk, searchStart){
   let guard = 0;
   while (day <= deadlineDay && guard < 60){
     guard++;
-    const windows = dayFreeWindows(day, 8, 23);
+    const windows = dayFreeWindows(day);
     for (const [s,e] of windows){
       const start = s < searchStart ? searchStart : s;
       const maxEnd = e < deadline ? e : deadline;
@@ -1989,8 +2011,8 @@ function renderFreeSlotPanel(){
   if (!wrap) return;
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
-  const todayWindows = dayFreeWindows(today, 8, 23);
-  const tomorrowWindows = dayFreeWindows(tomorrow, 8, 23);
+  const todayWindows = dayFreeWindows(today, new Date());
+  const tomorrowWindows = dayFreeWindows(tomorrow);
   function rowsHtml(windows, dayLbl){
     if (!windows.length) return '<div class="agenda-empty" style="padding:2px 8px;">' + dayLbl + ": boş aralık yok</div>";
     return windows.map(([s,e]) =>
@@ -2088,6 +2110,7 @@ const priorityChipsEl = document.getElementById("priorityChips");
 const typeChipsEl = document.getElementById("typeChips");
 const repeatChipsEl = document.getElementById("repeatChips");
 const fSure = document.getElementById("fSure");
+const fSureSaat = document.getElementById("fSureSaat");
 const suggestBtn = document.getElementById("suggestBtn");
 const suggestBox = document.getElementById("suggestBox");
 let selectedBildirimAcik = true;
@@ -2100,12 +2123,33 @@ document.getElementById("bildirimToggleRow").addEventListener("click", () => {
   document.getElementById("reminderField").style.display = selectedBildirimAcik ? "block" : "none";
 });
 
+// Etkinlikte süre (saat) ile bitiş saati birbirine bağlıdır: biri değişince diğeri güncellenir.
+function syncEndFromDuration(){
+  const h = parseFloat(String(fSureSaat.value).replace(",", "."));
+  if (!fTarih.value || !(h > 0)) return;
+  const start = new Date(fTarih.value);
+  if (isNaN(start)) return;
+  fBitis.value = toLocalInputValue(new Date(start.getTime() + Math.round(h*60)*60000));
+}
+function syncDurationFromEnd(){
+  if (!fTarih.value || !fBitis.value) return;
+  const ms = new Date(fBitis.value) - new Date(fTarih.value);
+  fSureSaat.value = ms > 0 ? Math.round(ms/3600000*100)/100 : "";
+}
+
 function updateSureHint(){
   const isEvent = selectedType === "etkinlik";
   const avg = calcAverageDuration(fDers.value, fBaslik.value, selectedType);
   const fSureHint = document.getElementById("fSureHint");
+  const fSureSaatHint = document.getElementById("fSureSaatHint");
   if (isEvent){
     fSureHint.style.display = "none";
+    if (avg){
+      fSureSaatHint.style.display = "flex";
+      fSureSaatHint.innerHTML = "<span>Geçmişe göre ortalama: ~" + (Math.round(avg/60*100)/100) + " saat</span>";
+    } else {
+      fSureSaatHint.style.display = "none";
+    }
     if (fTarih.value && !fBitisManuallyEdited && (!fBitis.value || fBitisAutoFilled)){
       const start = new Date(fTarih.value);
       if (!isNaN(start)){
@@ -2114,7 +2158,9 @@ function updateSureHint(){
         fBitisAutoFilled = true;
       }
     }
+    syncDurationFromEnd();
   } else {
+    fSureSaatHint.style.display = "none";
     if (avg){
       fSureHint.style.display = "flex";
       fSureHint.innerHTML = "<span>Geçmişe göre ortalama: ~" + avg + " dk</span>";
@@ -2127,8 +2173,13 @@ function updateSureHint(){
 }
 fDers.addEventListener("input", updateSureHint);
 fBaslik.addEventListener("input", updateSureHint);
-fTarih.addEventListener("input", updateSureHint);
-fBitis.addEventListener("input", () => { fBitisManuallyEdited = true; fBitisAutoFilled = false; });
+fTarih.addEventListener("input", () => {
+  updateSureHint();
+  // Kullanıcı süreyi/bitişi kendisi belirlediyse başlangıç değişince süre sabit kalsın, bitiş kaysın
+  if (selectedType === "etkinlik" && fBitisManuallyEdited) syncEndFromDuration();
+});
+fBitis.addEventListener("input", () => { fBitisManuallyEdited = true; fBitisAutoFilled = false; syncDurationFromEnd(); });
+fSureSaat.addEventListener("input", () => { fBitisManuallyEdited = true; fBitisAutoFilled = false; syncEndFromDuration(); });
 
 suggestBtn.addEventListener("click", () => {
   if (!fTarih.value){ toast("Önce tarih/saat gir."); return; }
@@ -2172,6 +2223,7 @@ function updateFormForType(){
   document.getElementById("fTarihLabel").textContent = isEvent ? "Başlangıç Tarihi ve Saati" : "Son Teslim Tarihi ve Saati";
   document.getElementById("fBitisField").style.display = isEvent ? "block" : "none";
   document.getElementById("fSureField").style.display = isEvent ? "none" : "block";
+  document.getElementById("fSureSaatField").style.display = isEvent ? "block" : "none";
   document.getElementById("suggestField").style.display = isEvent ? "none" : "block";
   updateSureHint();
 }
@@ -2241,6 +2293,7 @@ function openModal(id, dayKeyForNew){
   extraReminderChips = [];
   fBitisManuallyEdited = false;
   fBitisAutoFilled = false;
+  fSureSaat.value = "";
   suggestBox.classList.remove("show");
   suggestBox.innerHTML = "";
   document.getElementById("modalTitle").textContent = id ? "Kaydı Düzenle" : "Yeni Kayıt";
@@ -2260,6 +2313,7 @@ function openModal(id, dayKeyForNew){
     if (it.bitis_tarihi){
       const bd = toLocalDate(it.bitis_tarihi);
       fBitis.value = localDayKey(bd) + "T" + String(bd.getHours()).padStart(2,"0") + ":" + String(bd.getMinutes()).padStart(2,"0");
+      fBitisManuallyEdited = true;
     } else {
       fBitis.value = "";
     }
@@ -2327,6 +2381,10 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     tekrar: { tip: selectedRepeat, bitis: (selectedRepeat!=="yok" && fTekrarBitis.value) ? fTekrarBitis.value : null },
     bildirim_kapali: !selectedBildirimAcik,
   };
+  if (selectedType === "etkinlik" && fBitis.value && new Date(fBitis.value) <= new Date(localVal)){
+    toast("Bitiş, başlangıçtan sonra olmalı.");
+    return;
+  }
   if (selectedType === "etkinlik" && fBitis.value){
     payload.bitis_tarihi = new Date(fBitis.value).toISOString().slice(0,16);
     payload.sure_dk = Math.round((new Date(fBitis.value) - new Date(localVal)) / 60000) || 60;
