@@ -1,6 +1,5 @@
 from collections import deque
 from datetime import datetime, timedelta
-import hashlib
 import hmac
 import json
 import os
@@ -11,7 +10,6 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from flask import Flask, jsonify, render_template, request, send_from_directory
 import requests
-from playwright.sync_api import sync_playwright, TimeoutError as PWTimeoutError
 
 app = Flask(__name__, template_folder=".")
 
@@ -1235,171 +1233,6 @@ def webhook_receive():
         print(f"Webhook işleme hatası: {e}")
 
     return jsonify({"status": "ok"}), 200
-
-
-# ============================ TAC CONNECTED SENKRON ============================
-TAC_BASE = "https://connected.tac.k12.tr"
-TAC_USERNAME = os.environ.get("TAC_USERNAME", "")
-TAC_PASSWORD = os.environ.get("TAC_PASSWORD", "")
-TAC_SYNC_TOKEN = os.environ.get("TAC_SYNC_TOKEN") or APP_API_TOKEN
-
-# "Upcoming" bölümündeki her kayıt şu 3 satırlık kalıpta gelir:
-#   <ders adı>
-#   Due: <ödev başlığı>
-#   Due Date: 9/21/26, 8:25 AM (UTC+3)
-TAC_KAYIT_RE = re.compile(
-    r"(?P<ders>[^\n]{3,90})\n"
-    r"Due:\s*(?P<baslik>[^\n]{1,160})\n"
-    r"Due Date:\s*(?P<ay>\d{1,2})/(?P<gun>\d{1,2})/(?P<yil>\d{2,4}),\s*"
-    r"(?P<saat>\d{1,2}):(?P<dakika>\d{2})\s*(?P<mer>AM|PM)\s*\(UTC(?P<tz>[+-]?\d+)\)"
-)
-
-
-def _tac_bolum_metnini_ayikla(tam_metin, baslik):
-    """'Upcoming' gibi bir bölüm başlığından bir sonraki bölüm başlığına kadar olan metni döndürür."""
-    satirlar = tam_metin.splitlines()
-    bilinen_basliklar = {"Important", "Upcoming", "Recent", "Due Today", "Due Soon", "Overdue"}
-    try:
-        bas = next(i for i, s in enumerate(satirlar) if s.strip() == baslik)
-    except StopIteration:
-        return ""
-    son = len(satirlar)
-    for i in range(bas + 1, len(satirlar)):
-        if satirlar[i].strip() in bilinen_basliklar and satirlar[i].strip() != baslik:
-            son = i
-            break
-    return "\n".join(satirlar[bas + 1:son])
-
-
-def _tac_teslim_utc(kayit):
-    ay, gun, yil = int(kayit["ay"]), int(kayit["gun"]), int(kayit["yil"])
-    if yil < 100:
-        yil += 2000
-    saat = int(kayit["saat"]) % 12
-    if kayit["mer"].upper() == "PM":
-        saat += 12
-    tz_ofset = int(kayit["tz"])
-    yerel = datetime(yil, ay, gun, saat, int(kayit["dakika"]))
-    return yerel - timedelta(hours=tz_ofset)
-
-
-def tac_yeni_odevleri_getir():
-    """TAC ConnectED'e giriş yapıp Activity > Upcoming listesini ayrıştırır. [(ders, baslik, teslim_utc_dt), ...] döner."""
-    if not TAC_USERNAME or not TAC_PASSWORD:
-        raise RuntimeError("TAC_USERNAME / TAC_PASSWORD ortam değişkenleri eksik.")
-
-    with sync_playwright() as p:
-        tarayici = p.chromium.launch(
-            headless=True,
-            args=[
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--single-process",
-                "--no-zygote",
-                "--disable-extensions",
-                "--disable-background-networking",
-                "--js-flags=--max-old-space-size=200",
-            ],
-        )
-        try:
-            sayfa = tarayici.new_page()
-            sayfa.goto(TAC_BASE + "/", timeout=30000, wait_until="domcontentloaded")
-
-            # Giriş formu (Blackboard klasik login): kullanıcı adı / şifre alanları
-            kullanici_alani = sayfa.locator(
-                "#user_id, input[name='user_id'], input[autocomplete='username']"
-            ).first
-            sifre_alani = sayfa.locator(
-                "#password, input[name='password'], input[type='password']"
-            ).first
-            kullanici_alani.wait_for(timeout=15000)
-            kullanici_alani.fill(TAC_USERNAME)
-            sifre_alani.fill(TAC_PASSWORD)
-            sayfa.locator(
-                "#entry-login, button:has-text('Sign In'), input[type='submit']"
-            ).first.click()
-            sayfa.wait_for_load_state("networkidle", timeout=30000)
-
-            sayfa.goto(TAC_BASE + "/ultra/stream", timeout=30000, wait_until="networkidle")
-            sayfa.wait_for_selector("text=Upcoming", timeout=20000)
-            tam_metin = sayfa.locator("body").inner_text()
-        finally:
-            tarayici.close()
-
-    upcoming_metni = _tac_bolum_metnini_ayikla(tam_metin, "Upcoming")
-    if not upcoming_metni:
-        print("[TAC] 'Upcoming' bölümü bulunamadı, sayfa yapısı değişmiş olabilir.")
-        print("[TAC] Sayfa metni (ilk 800 karakter): " + tam_metin[:800])
-        return []
-
-    sonuc = []
-    for m in TAC_KAYIT_RE.finditer(upcoming_metni):
-        kayit = m.groupdict()
-        ders = kayit["ders"].strip()
-        baslik = kayit["baslik"].strip()
-        teslim_utc = _tac_teslim_utc(kayit)
-        sonuc.append((ders, baslik, teslim_utc))
-
-    if not sonuc:
-        print("[TAC] 'Upcoming' bulundu ama hiç kayıt ayrıştırılamadı. Bölüm metni: " + upcoming_metni[:800])
-    return sonuc
-
-
-def tac_senkronize_et():
-    yeni_kayitlar = tac_yeni_odevleri_getir()
-    if not yeni_kayitlar:
-        return {"bulunan": 0, "eklenen": 0}
-
-    mevcut_tac_id = {v.get("tac_id") for _, v in odevleri_al(taze=True) if v.get("tac_id")}
-    now = datetime.utcnow()
-    eklenen = []
-
-    for ders, baslik, teslim_utc in yeni_kayitlar:
-        teslim_str = teslim_utc.strftime(ZAMAN_FORMAT)
-        tac_id = hashlib.sha1(f"{ders}|{baslik}|{teslim_str}".encode("utf-8")).hexdigest()[:20]
-        if tac_id in mevcut_tac_id:
-            continue
-
-        dks = [dk for dk in VARSAYILAN_HATIRLATMA_DK if teslim_utc - timedelta(minutes=dk) > now] or [0]
-        db.collection("odevler").add({
-            "baslik": baslik, "ders": ders, "tur": "gorev", "oncelik": "orta", "notlar": "",
-            "teslim_tarihi": teslim_str,
-            "tekrar": {"tip": "yok", "bitis": None},
-            "hatirlatmalar": [{"dk": dk, "gonderildi": False} for dk in dks],
-            "bildirim_kapali": False, "gonderildi": False, "tamamlandi": False,
-            "olusturulma": now.isoformat(timespec="milliseconds") + "Z",
-            "bitis_tarihi": None, "sure_dk": 30,
-            "tac_id": tac_id, "kaynak": "tac_connected",
-        })
-        mevcut_tac_id.add(tac_id)
-        eklenen.append((ders, baslik, teslim_str))
-
-    odev_onbellek_temizle()
-
-    if eklenen:
-        satirlar = ["📥 *TAC'tan yeni ödev(ler) eklendi:*", ""]
-        for ders, baslik, teslim_str in eklenen:
-            satirlar.append(f"📚 *{baslik}* ({ders})\n🗓️ {teslim_str}")
-        send_telegram("\n\n".join(satirlar))
-
-    return {"bulunan": len(yeni_kayitlar), "eklenen": len(eklenen)}
-
-
-@app.route("/sync-tac", methods=["GET"])
-def sync_tac():
-    token = request.headers.get("X-App-Token") or request.args.get("token")
-    if not hmac.compare_digest((token or "").encode("utf-8"), (TAC_SYNC_TOKEN or "").encode("utf-8")):
-        return "Forbidden", 403
-    try:
-        sonuc = tac_senkronize_et()
-        return jsonify({"status": "ok", **sonuc})
-    except PWTimeoutError as e:
-        print(f"[TAC] Zaman aşımı: {e}")
-        return jsonify({"status": "error", "detay": "TAC sayfası zaman aşımına uğradı (giriş bilgisi hatalı olabilir)."}), 502
-    except Exception as e:
-        print(f"[TAC] Senkron hatası: {e}")
-        return jsonify({"status": "error", "detay": str(e)}), 500
 
 
 @app.route("/check-assignments", methods=["GET"])
