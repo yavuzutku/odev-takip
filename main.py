@@ -1289,7 +1289,19 @@ def tac_yeni_odevleri_getir():
         raise RuntimeError("TAC_USERNAME / TAC_PASSWORD ortam değişkenleri eksik.")
 
     with sync_playwright() as p:
-        tarayici = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
+        tarayici = p.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--single-process",
+                "--no-zygote",
+                "--disable-extensions",
+                "--disable-background-networking",
+                "--js-flags=--max-old-space-size=200",
+            ],
+        )
         try:
             sayfa = tarayici.new_page()
             sayfa.goto(TAC_BASE + "/", timeout=30000, wait_until="domcontentloaded")
