@@ -487,6 +487,7 @@
             <div class="collapse-toggle open" id="aiToggle">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
               ✨ Asistan
+              <span id="aiKalan" style="margin-left:auto;text-transform:none;letter-spacing:0;font-size:11px;"></span>
             </div>
             <div id="aiContent">
               <div class="ai-chips">
@@ -495,7 +496,7 @@
                 <span class="chip" data-ai="Gecikmiş ya da yaklaşan önemli işlerim neler?">⚠️ Yaklaşanlar</span>
               </div>
               <div class="ai-row">
-                <input type="text" id="aiInput" placeholder="Asistana sor…" maxlength="300" autocomplete="off">
+                <input type="text" id="aiInput" placeholder="Ne yapayım? (ekle, taşı, sil, ara, mesajlara bak…)" maxlength="300" autocomplete="off">
                 <button class="btn btn-accent" id="aiSend" type="button" style="padding:7px 12px;font-size:12.5px;">Sor</button>
               </div>
               <div class="ai-log" id="aiLog"></div>
@@ -1827,24 +1828,33 @@ quickaddInput.addEventListener("keydown", (e) => {
 });
 // ---- Gemini (AI) ----
 let aiAktif = false;
-async function aiPost(path, body, timeoutMs){
+function aiKalanGoster(n){
+  const el = document.getElementById("aiKalan");
+  if (el && n != null) el.textContent = n + " hak";
+}
+async function aiPost(path, body, timeoutMs, extraHeaders){
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs || 15000);
   try{
     const res = await fetch(path, {
       method: "POST",
-      headers: {"Content-Type":"application/json", "X-App-Token": APP_API_TOKEN},
+      headers: Object.assign({"Content-Type":"application/json", "X-App-Token": APP_API_TOKEN}, extraHeaders || {}),
       body: JSON.stringify(body),
       signal: ctrl.signal
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.status !== "ok") throw new Error(data.detay || ("HTTP " + res.status));
+    if (!res.ok || data.status !== "ok"){
+      const err = new Error(data.detay || ("HTTP " + res.status));
+      err.status = res.status;
+      throw err;
+    }
     return data;
   } finally { clearTimeout(t); }
 }
 fetch("/api/ai/status", {cache:"no-store"}).then(r => r.json()).then(d => {
   aiAktif = !!d.aktif;
   document.getElementById("aiPanel").style.display = aiAktif ? "" : "none";
+  aiKalanGoster(d.kalan);
   if (aiAktif) quickaddInput.placeholder = "Örn: yarın 15:00 matematik ödevi, cuma almanca sınavı ✨";
 }).catch(() => {});
 
@@ -2153,44 +2163,34 @@ function aiEkle(cls, text){
   aiLog.scrollTop = aiLog.scrollHeight;
   return el;
 }
-// Asistana gönderilecek özet: yaklaşan kayıtlar (tekrarlar açılmış) + önümüzdeki 3 günün boş aralıkları
-function aiBaglamKur(){
-  const now = new Date();
-  const bas = new Date(now); bas.setDate(bas.getDate()-3);
-  const son = new Date(now); son.setDate(son.getDate()+14);
-  const occs = expandItemsForRange(items.filter(it => !it.tamamlandi), bas, son)
-    .filter(o => o._occStart >= now || (!o._virtual && o.tur !== "etkinlik"))
-    .sort((a,b) => a._occStart - b._occStart).slice(0, 60);
-  const baglam = occs.map(o => ({
-    z: toLocalInputValue(o._occStart), b: o.baslik, d: o.ders || "", t: o.tur, o: o.oncelik || "orta",
-    dk: itemDurationMinutes(o) || null, tk: (o.tekrar && o.tekrar.tip && o.tekrar.tip !== "yok") ? o.tekrar.tip : ""
-  }));
-  const bosluklar = [];
-  const gun0 = new Date(now); gun0.setHours(0,0,0,0);
-  for (let i = 0; i < 3; i++){
-    const g = new Date(gun0); g.setDate(g.getDate()+i);
-    dayFreeWindows(g, i === 0 ? now : undefined).forEach(([s,e]) => {
-      bosluklar.push(localDayKey(s) + " " + fmtTime(s) + "-" + fmtTime(e));
-    });
+function aiPinAl(){
+  let pin = "";
+  try{ pin = localStorage.getItem("odevAiPin") || ""; }catch(e){}
+  if (!pin){
+    pin = (prompt("Asistan PIN'i (Render'daki AI_PIN):") || "").trim();
+    if (pin){ try{ localStorage.setItem("odevAiPin", pin); }catch(e){} }
   }
-  return {baglam, bosluklar};
+  return pin;
 }
 async function aiSor(soru, mod){
   soru = (soru || "").trim();
   if (!soru || aiBusy) return;
+  const pin = aiPinAl();
+  if (!pin) return;
   aiBusy = true;
   aiEkle("u", soru);
   const bekle = aiEkle("m wait", "Düşünüyorum…");
   try{
-    const {baglam, bosluklar} = aiBaglamKur();
-    const d = await aiPost("/api/ai/ask", {
-      soru, mod: mod || "sohbet", simdi: toLocalInputValue(new Date()), baglam, bosluklar, gecmis: aiGecmis.slice(-6)
-    }, 25000);
+    // Takvim ve mesaj bağlamını sunucu kendisi okuyor; tarayıcıdan sadece soru gidiyor.
+    const d = await aiPost("/api/ai/ask", {soru, mod: mod || "sohbet", gecmis: aiGecmis.slice(-6)}, 30000, {"X-AI-Pin": pin});
     bekle.className = "ai-msg m";
-    bekle.innerHTML = aiFormat(d.cevap);
-    aiGecmis.push({r:"u", t:soru}, {r:"m", t:d.cevap});
+    const yap = (d.yapilanlar || []).join("\n");
+    bekle.innerHTML = aiFormat([d.cevap, yap].filter(Boolean).join("\n\n") || "Tamam 👍");
+    aiGecmis.push({r:"u", t:soru}, {r:"m", t:d.cevap || yap});
+    aiKalanGoster(d.kalan);
   }catch(e){
     bekle.className = "ai-msg m";
+    if (e.status === 403){ try{ localStorage.removeItem("odevAiPin"); }catch(_){} }
     bekle.textContent = "⚠️ " + (e.name === "AbortError" ? "Zaman aşımı, tekrar dene." : e.message);
   }finally{
     aiBusy = false;
