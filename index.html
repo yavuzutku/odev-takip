@@ -1828,9 +1828,12 @@ quickaddInput.addEventListener("keydown", (e) => {
 });
 // ---- Gemini (AI) ----
 let aiAktif = false;
-function aiKalanGoster(n){
+function aiKalanGoster(n, model){
   const el = document.getElementById("aiKalan");
-  if (el && n != null) el.textContent = n + " hak";
+  if (!el) return;
+  if (n != null) el.dataset.n = n;
+  if (model) el.dataset.m = model.replace(/^gemini-/, "");
+  el.textContent = [el.dataset.m, el.dataset.n != null ? el.dataset.n + " hak" : ""].filter(Boolean).join(" · ");
 }
 async function aiPost(path, body, timeoutMs, extraHeaders){
   const ctrl = new AbortController();
@@ -1854,7 +1857,7 @@ async function aiPost(path, body, timeoutMs, extraHeaders){
 fetch("/api/ai/status", {cache:"no-store"}).then(r => r.json()).then(d => {
   aiAktif = !!d.aktif;
   document.getElementById("aiPanel").style.display = aiAktif ? "" : "none";
-  aiKalanGoster(d.kalan);
+  aiKalanGoster(d.kalan, d.model);
   if (aiAktif) quickaddInput.placeholder = "Örn: yarın 15:00 matematik ödevi, cuma almanca sınavı ✨";
 }).catch(() => {});
 
@@ -2187,7 +2190,7 @@ async function aiSor(soru, mod){
     const yap = (d.yapilanlar || []).join("\n");
     bekle.innerHTML = aiFormat([d.cevap, yap].filter(Boolean).join("\n\n") || "Tamam 👍");
     aiGecmis.push({r:"u", t:soru}, {r:"m", t:d.cevap || yap});
-    aiKalanGoster(d.kalan);
+    aiKalanGoster(d.kalan, d.model);
   }catch(e){
     bekle.className = "ai-msg m";
     if (e.status === 403){ try{ localStorage.removeItem("odevAiPin"); }catch(_){} }
