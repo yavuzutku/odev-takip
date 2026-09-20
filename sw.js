@@ -1,4 +1,4 @@
-const CACHE_NAME = "odev-takip-v1";
+const CACHE_NAME = "odev-takip-v2";
 const APP_SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -24,6 +24,9 @@ self.addEventListener("fetch", (event) => {
 
   // Firebase / harici istekler: her zaman ağdan (offline'da olduğu gibi başarısız olabilir)
   if (url.origin !== self.location.origin) return;
+
+  // API istekleri (ör. /api/ai/status) asla önbelleğe alınmasın
+  if (url.pathname.startsWith("/api/")) return;
 
   if (req.mode === "navigate") {
     event.respondWith(
