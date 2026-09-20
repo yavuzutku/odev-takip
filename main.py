@@ -1,5 +1,6 @@
 from collections import deque
 from datetime import datetime, timedelta
+import hashlib
 import hmac
 import json
 import os
@@ -1233,6 +1234,113 @@ def webhook_receive():
         print(f"Webhook işleme hatası: {e}")
 
     return jsonify({"status": "ok"}), 200
+
+
+# ============================ TAC ICS SENKRON ============================
+TAC_ICS_URL = os.environ.get("TAC_ICS_URL", "")
+TAC_SYNC_TOKEN = os.environ.get("TAC_SYNC_TOKEN") or APP_API_TOKEN
+
+
+def _tac_metin_temizle(v):
+    return (
+        (v or "").strip()
+        .replace("\\,", ",").replace("\\;", ";")
+        .replace("\\n", " ").replace("\\N", " ")
+        .replace("\\\\", "\\")
+    )
+
+
+def tac_ics_kayitlarini_getir():
+    """TAC'ın herkese açık ICS takvim linkinden geleceğe ait kayıtları çeker (geçmiş atlanır)."""
+    if not TAC_ICS_URL:
+        raise RuntimeError("TAC_ICS_URL ortam değişkeni eksik.")
+    r = requests.get(TAC_ICS_URL, timeout=20)
+    r.raise_for_status()
+    metin = re.sub(r"\r?\n[ \t]", "", r.text)  # ICS satır katlamasını (fold) aç
+
+    now = datetime.utcnow()
+    kayitlar = []
+    ds_deger = su_deger = ui_deger = None
+    for satir in metin.splitlines():
+        if satir == "BEGIN:VEVENT":
+            ds_deger = su_deger = ui_deger = None
+        elif satir == "END:VEVENT":
+            if ds_deger and su_deger and ui_deger:
+                try:
+                    yerel = datetime.strptime(ds_deger, "%Y%m%dT%H%M%S")
+                except ValueError:
+                    yerel = None
+                if yerel:
+                    teslim_utc = yerel - timedelta(hours=LOCAL_TZ_OFFSET_HOURS)
+                    if teslim_utc >= now:  # geçmiş -> atla, sadece şimdi/gelecek
+                        baslik = _tac_metin_temizle(su_deger)[:160]
+                        if baslik:
+                            kayitlar.append((baslik, teslim_utc))
+        elif satir.startswith("DTSTART"):
+            m = re.search(r":(\d{8}T\d{6})", satir)
+            if m:
+                ds_deger = m.group(1)
+        elif satir.startswith("SUMMARY:"):
+            su_deger = satir[len("SUMMARY:"):]
+        elif satir.startswith("UID:"):
+            ui_deger = satir[len("UID:"):]
+    return kayitlar
+
+
+def tac_senkronize_et():
+    yeni_kayitlar = tac_ics_kayitlarini_getir()
+    if not yeni_kayitlar:
+        return {"bulunan": 0, "eklenen": 0}
+
+    mevcut_tac_id = {v.get("tac_id") for _, v in odevleri_al(taze=True) if v.get("tac_id")}
+    now = datetime.utcnow()
+    eklenen = []
+
+    for baslik, teslim_utc in yeni_kayitlar:
+        teslim_str = teslim_utc.strftime(ZAMAN_FORMAT)
+        tac_id = hashlib.sha1(f"{baslik}|{teslim_str}".encode("utf-8")).hexdigest()[:20]
+        if tac_id in mevcut_tac_id:
+            continue
+
+        dks = [dk for dk in VARSAYILAN_HATIRLATMA_DK if teslim_utc - timedelta(minutes=dk) > now] or [0]
+        db.collection("odevler").add({
+            "baslik": baslik, "ders": "", "tur": "gorev", "oncelik": "orta", "notlar": "",
+            "teslim_tarihi": teslim_str,
+            "tekrar": {"tip": "yok", "bitis": None},
+            "hatirlatmalar": [{"dk": dk, "gonderildi": False} for dk in dks],
+            "bildirim_kapali": False, "gonderildi": False, "tamamlandi": False,
+            "olusturulma": now.isoformat(timespec="milliseconds") + "Z",
+            "bitis_tarihi": None, "sure_dk": 30,
+            "tac_id": tac_id, "kaynak": "tac_ics",
+        })
+        mevcut_tac_id.add(tac_id)
+        eklenen.append((baslik, teslim_str))
+
+    odev_onbellek_temizle()
+
+    if eklenen:
+        satirlar = ["📥 *TAC takviminden yeni ödev(ler) eklendi:*", ""]
+        for baslik, teslim_str in eklenen:
+            satirlar.append(f"📚 *{baslik}*\n🗓️ {teslim_str}")
+        send_telegram("\n\n".join(satirlar))
+
+    return {"bulunan": len(yeni_kayitlar), "eklenen": len(eklenen)}
+
+
+@app.route("/sync-tac", methods=["GET"])
+def sync_tac():
+    token = request.headers.get("X-App-Token") or request.args.get("token")
+    if not hmac.compare_digest((token or "").encode("utf-8"), (TAC_SYNC_TOKEN or "").encode("utf-8")):
+        return "Forbidden", 403
+    try:
+        sonuc = tac_senkronize_et()
+        return jsonify({"status": "ok", **sonuc})
+    except requests.RequestException as e:
+        print(f"[TAC] ICS indirme hatası: {e}")
+        return jsonify({"status": "error", "detay": "ICS takvimi indirilemedi."}), 502
+    except Exception as e:
+        print(f"[TAC] Senkron hatası: {e}")
+        return jsonify({"status": "error", "detay": str(e)}), 500
 
 
 @app.route("/check-assignments", methods=["GET"])
