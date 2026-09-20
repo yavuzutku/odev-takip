@@ -429,6 +429,7 @@ _odev_onbellek = {"t": 0.0, "docs": []}
 _son_temizlik = {"t": 0.0}
 
 GUNLER = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
+AY_KISA = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
 TUR_DEGERLERI = ("gorev", "etkinlik")
 ONCELIK_DEGERLERI = ("dusuk", "orta", "yuksek")
 TEKRAR_DEGERLERI = ("yok", "haftalik", "hafta_ici", "aylik_ilk_gun")
@@ -1131,6 +1132,37 @@ def api_free_slots():
         "saat_dilimi": f"UTC{LOCAL_TZ_OFFSET_HOURS:+d}",
         "bosluklar": [{"baslangic": s.strftime(ZAMAN_FORMAT), "bitis": e.strftime(ZAMAN_FORMAT)} for s, e in bosluklar]
     })
+
+
+@app.route("/api/hafta", methods=["GET"])
+def api_hafta():
+    token = request.args.get("token") or request.headers.get("X-App-Token")
+    if not hmac.compare_digest((token or "").encode("utf-8"), (APP_API_TOKEN or "").encode("utf-8")):
+        return "Forbidden", 403
+
+    now = datetime.utcnow()
+    end = now + timedelta(days=7)
+    docs = (
+        db.collection("odevler")
+        .where("teslim_tarihi", ">=", now.strftime(ZAMAN_FORMAT))
+        .where("teslim_tarihi", "<=", end.strftime(ZAMAN_FORMAT))
+        .stream()
+    )
+    liste = []
+    for d in docs:
+        v = d.to_dict()
+        ts = v.get("teslim_tarihi") or ""
+        dt = parse_dt(ts)
+        yerel = utc_to_yerel(dt) if dt else None
+        liste.append({
+            "baslik": v.get("baslik") or "",
+            "ders": v.get("ders") or "",
+            "teslim": f"{yerel.day} {AY_KISA[yerel.month - 1]} {yerel.strftime('%H:%M')}" if yerel else ts,
+            "teslim_ts": ts,
+            "tamamlandi": bool(v.get("tamamlandi")),
+        })
+    liste.sort(key=lambda x: (x["tamamlandi"], x["teslim_ts"]))
+    return jsonify({"status": "ok", "odevler": liste})
 
 
 @app.route("/", methods=["GET"])
