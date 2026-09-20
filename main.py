@@ -383,10 +383,10 @@ def gunluk_ozet_kontrol_et():
 
 # ============================ GEMINI (AI) ============================
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-# "gemini-flash-latest" her zaman güncel Flash modeline işaret eder. İstersen Render'da GEMINI_MODEL ile sabitle.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
-GEMINI_FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
+# Boşsa model, hesabındaki en yeni Flash model otomatik bulunur (ListModels). İstersen Render'da GEMINI_MODEL ile sabitle.
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "").strip()
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_LIST_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 AI_RATE_PER_MIN = int(os.environ.get("AI_RATE_PER_MIN", "20"))
 AI_DAILY_LIMIT = int(os.environ.get("AI_DAILY_LIMIT", "400"))
 VARSAYILAN_HATIRLATMA_DK = [int(x) for x in os.environ.get("DEFAULT_REMINDERS_DK", "1440,180,0").split(",") if x.strip().isdigit()]
@@ -401,6 +401,8 @@ _ai_zamanlar = []
 _ai_gunluk = {"gun": "", "sayi": 0}
 _dusunme_kapatilabilir = True   # thinkingBudget=0 model tarafından reddedilirse False olur
 _islenen_update_idler = deque(maxlen=200)
+_model_onbellek = {"liste": [], "zaman": 0.0}
+_MODEL_HARIC = ("image", "tts", "audio", "live", "embedding", "robotics", "computer-use", "vision")
 
 
 class GeminiHata(Exception):
@@ -437,9 +439,49 @@ def _gemini_metin(veri):
     return metin
 
 
+def gemini_modelleri():
+    """Denenecek modeller: GEMINI_MODEL (varsa) + hesapta gerçekten bulunan en yeni Flash modelleri."""
+    simdi = time.time()
+    if _model_onbellek["liste"] and simdi - _model_onbellek["zaman"] < 3600:
+        return _model_onbellek["liste"]
+    bulunan = []
+    try:
+        r = requests.get(GEMINI_LIST_URL, headers={"x-goog-api-key": GEMINI_API_KEY},
+                         params={"pageSize": 200}, timeout=(5, 10))
+        if r.status_code == 200:
+            for m in r.json().get("models", []):
+                ad = (m.get("name") or "").replace("models/", "")
+                if ("generateContent" not in (m.get("supportedGenerationMethods") or [])
+                        or "flash" not in ad or any(x in ad for x in _MODEL_HARIC)):
+                    continue
+                v = re.search(r"gemini-(\d+(?:\.\d+)?)", ad)
+                if v:  # önce yeni sürüm, sonra lite olmayan, sonra preview/exp olmayan
+                    bulunan.append(((float(v.group(1)), "lite" not in ad, not re.search(r"preview|exp", ad)), ad))
+        else:
+            print(f"[Gemini] model listesi alınamadı: HTTP {r.status_code} {r.text[:200]}")
+    except requests.RequestException as e:
+        print(f"[Gemini] model listesi bağlantı hatası: {e}")
+    bulunan.sort(reverse=True)
+    liste = []
+    for ad in ([GEMINI_MODEL] if GEMINI_MODEL else []) + [ad for _, ad in bulunan[:3]] + ["gemini-flash-latest", "gemini-2.5-flash"]:
+        if ad not in liste:
+            liste.append(ad)
+    if bulunan:
+        print(f"[Gemini] denenecek modeller: {liste[:4]}")
+        _model_onbellek["liste"], _model_onbellek["zaman"] = liste, simdi
+    return liste
+
+
+def _google_hata_mesaji(r):
+    try:
+        return str((r.json().get("error") or {}).get("message") or "")[:150]
+    except ValueError:
+        return r.text[:150]
+
+
 def gemini_uret(sistem, istek, json_cikti=False, max_token=2048, sicaklik=0.3, timeout=20):
     """Gemini REST çağrısı (ek kütüphane gerekmez). Hızlı olsun diye düşünmeyi kapatmayı dener,
-    model desteklemiyorsa otomatik düşünme açık haliyle tekrar dener; model bulunamazsa yedek modele geçer."""
+    model desteklemiyorsa düşünme açık haliyle tekrar dener; model bulunamazsa sıradaki modele geçer."""
     global _dusunme_kapatilabilir
     if not GEMINI_API_KEY:
         raise GeminiHata("GEMINI_API_KEY tanımlı değil.", 503)
@@ -453,12 +495,8 @@ def gemini_uret(sistem, istek, json_cikti=False, max_token=2048, sicaklik=0.3, t
     if json_cikti:
         govde["generationConfig"]["responseMimeType"] = "application/json"
 
-    modeller = [GEMINI_MODEL]
-    if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL != GEMINI_MODEL:
-        modeller.append(GEMINI_FALLBACK_MODEL)
-
-    son_kod = 502
-    for model in modeller:
+    son_kod, son_mesaj = 502, ""
+    for model in gemini_modelleri()[:4]:
         for dusunme_kapali in ((True, False) if _dusunme_kapatilabilir else (False,)):
             g = json.loads(json.dumps(govde))
             if dusunme_kapali:
@@ -471,7 +509,7 @@ def gemini_uret(sistem, istek, json_cikti=False, max_token=2048, sicaklik=0.3, t
                 )
             except requests.RequestException as e:
                 print(f"[Gemini] {model} bağlantı hatası: {e}")
-                son_kod = 504
+                son_kod, son_mesaj = 504, "bağlantı hatası"
                 break
             if r.status_code == 200:
                 return _gemini_metin(r.json())
@@ -480,12 +518,15 @@ def gemini_uret(sistem, istek, json_cikti=False, max_token=2048, sicaklik=0.3, t
                 continue
             print(f"[Gemini] {model} HTTP {r.status_code}: {r.text[:300]}")
             son_kod = 401 if (r.status_code == 400 and "api key" in r.text.lower()) else r.status_code
+            son_mesaj = _google_hata_mesaji(r)
             break
+    if son_kod == 404:
+        _model_onbellek["liste"] = []   # bir sonraki çağrıda model listesi yeniden alınsın
     if son_kod in (401, 403):
-        raise GeminiHata("Gemini API anahtarı geçersiz ya da yetkisiz.", 502)
+        raise GeminiHata(f"Gemini API anahtarı geçersiz ya da yetkisiz. {son_mesaj}".strip(), 502)
     if son_kod == 429:
         raise GeminiHata("Gemini kotası doldu, biraz sonra tekrar dene.", 429)
-    raise GeminiHata(f"Gemini şu an yanıt veremedi (HTTP {son_kod}).", 502)
+    raise GeminiHata(f"Gemini şu an yanıt veremedi (HTTP {son_kod}). {son_mesaj}".strip(), 502)
 
 
 def json_ayikla(metin):
