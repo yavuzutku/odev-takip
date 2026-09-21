@@ -139,18 +139,34 @@ def sure_metni(dakika):
     return f"{gun} gün kaldı"
 
 
-def tekrar_araligi_dakika(teslim_dt, now):
-    """Teslime kalan süreye göre gitgide sıklaşan hatırlatma aralığı (dk)."""
-    kalan_dk = (teslim_dt - now).total_seconds() / 60
-    if kalan_dk < 0:
-        return 15    # süresi geçmiş -> tamamlanana kadar sık sık rahatsız et
-    if kalan_dk <= 60:
-        return 10    # son 1 saat -> çok sık
-    if kalan_dk <= 360:
-        return 30    # son 6 saat
-    if kalan_dk <= 1440:
-        return 120   # son 1 gün
-    return 240       # daha uzun vadeli -> 4 saatte bir
+AYARLAR_VARSAYILAN = {"saat_araligi": 4, "aktif_gunler": [0, 1, 2, 3, 4, 5, 6]}  # 0=Pazartesi ... 6=Pazar
+HATIRLATMA_BASLANGIC_DK = 24 * 60  # teslime bu kadar dk kalınca hatırlatmalar başlar (sabit, basit tutmak için)
+_ayarlar_onbellek = {"veri": None, "zaman": 0.0}
+
+
+def bildirim_ayarlarini_al():
+    """Uygulamadaki Ayarlar panelinden (Firestore: ayarlar/bildirim) okunur; yoksa varsayılan kullanılır.
+    120 sn önbelleklenir ki her check-assignments çağrısı Firestore'u yormasın."""
+    simdi = time.time()
+    if _ayarlar_onbellek["veri"] is not None and simdi - _ayarlar_onbellek["zaman"] < 120:
+        return _ayarlar_onbellek["veri"]
+    veri = dict(AYARLAR_VARSAYILAN)
+    try:
+        snap = db.collection("ayarlar").document("bildirim").get()
+        if snap.exists:
+            d = snap.to_dict() or {}
+            sa = d.get("saat_araligi")
+            if isinstance(sa, (int, float)) and sa > 0:
+                veri["saat_araligi"] = sa
+            gunler = d.get("aktif_gunler")
+            if isinstance(gunler, list) and gunler:
+                temiz = [g for g in gunler if isinstance(g, int) and 0 <= g <= 6]
+                if temiz:
+                    veri["aktif_gunler"] = temiz
+    except Exception as e:
+        print(f"[Ayarlar] okunamadı, varsayılan kullanılıyor: {e}")
+    _ayarlar_onbellek["veri"], _ayarlar_onbellek["zaman"] = veri, simdi
+    return veri
 
 
 def mesaj_olustur(data, dakika, tekrar=False):
@@ -416,9 +432,11 @@ def gunluk_ozet_kontrol_et():
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 # Boşsa model, hesabındaki en yeni Flash model otomatik bulunur (ListModels). İstersen Render'da GEMINI_MODEL ile sabitle.
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "").strip()
-# 3.x ve üstü modeller bu iş için gereksiz büyük ve sık HTTP 400 hatası veriyordu; varsayılan üst sınır 2.5.
-# Render'da GEMINI_MAX_VERSION ile değiştirilebilir (örn. "3" yazarsan 3.x modellere de izin verilir).
-GEMINI_MAX_VERSION = float(os.environ.get("GEMINI_MAX_VERSION", "2.5"))
+# Google modelleri düzenli olarak eskitip kapatıyor (ör. gemini-2.5-flash artık yeni hesaplara kapalı ve
+# HTTP 404 veriyor). Sabit bir üst sınır bir süre sonra mutlaka bozulduğundan varsayılan olarak sınır YOK;
+# hesapta bulunan en güncel Flash modeli otomatik seçilir. Render'da GEMINI_MAX_VERSION ile yine de bir
+# tavan koyabilirsin (örn. "3.5"), ama bu bakım gerektirir.
+GEMINI_MAX_VERSION = float(os.environ.get("GEMINI_MAX_VERSION", "999"))
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GEMINI_LIST_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 AI_RATE_PER_MIN = int(os.environ.get("AI_RATE_PER_MIN", "20"))
@@ -507,7 +525,7 @@ def gemini_modelleri():
         print(f"[Gemini] model listesi bağlantı hatası: {e}")
     bulunan.sort(reverse=True)
     liste = []
-    for ad in ([GEMINI_MODEL] if GEMINI_MODEL else []) + [ad for _, ad in bulunan[:3]] + ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
+    for ad in ([GEMINI_MODEL] if GEMINI_MODEL else []) + [ad for _, ad in bulunan[:3]] + ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite"]:
         if ad not in liste:
             liste.append(ad)
     if bulunan:
@@ -1045,6 +1063,7 @@ def api_ai_status():
         "aktif": bool(GEMINI_API_KEY),
         "kalan": ai_kalan() if GEMINI_API_KEY else 0,
         "model": (_son_model["ad"] or gemini_modelleri()[0]) if GEMINI_API_KEY else "",
+        "denenecek_modeller": gemini_modelleri() if GEMINI_API_KEY else [],
     })
 
 
@@ -1433,19 +1452,22 @@ def sync_tac():
 @app.route("/check-assignments", methods=["GET"])
 def check_assignments():
     now = datetime.utcnow()
-    now_str = now.strftime(ZAMAN_FORMAT)
     odevler_ref = db.collection("odevler")
     docs = odevler_ref.stream()
 
     gonderilen_sayisi = 0
 
+    # Basitleştirilmiş bildirim modeli: belirli "şu kadar önce" tetikleri yerine tek bir
+    # "kaç saatte bir" aralığı ve "hangi günler" filtresi kullanılır (Ayarlar panelinden).
+    ayarlar = bildirim_ayarlarini_al()
+    yerel_simdi = now + timedelta(hours=LOCAL_TZ_OFFSET_HOURS)
+    gun_aktif = yerel_simdi.weekday() in ayarlar["aktif_gunler"]
+    aralik_dk = max(5, int(ayarlar["saat_araligi"] * 60))
+
     for d in docs:
         data = d.to_dict()
 
-        if data.get("tamamlandi"):
-            continue
-
-        if data.get("bildirim_kapali"):
+        if data.get("tamamlandi") or data.get("bildirim_kapali"):
             continue
 
         teslim_tarihi = data.get("teslim_tarihi")
@@ -1457,68 +1479,34 @@ def check_assignments():
         except ValueError:
             continue
 
-        hatirlatmalar = data.get("hatirlatmalar")
-        ilk_gonderim_bu_turda = False
+        if not gun_aktif:
+            continue  # bugün aktif bildirim günlerinden değil
 
-        if hatirlatmalar:
-            yeni_liste = []
-            degisti = False
-            for h in hatirlatmalar:
-                dk = h.get("dk", 0)
-                if not h.get("gonderildi"):
-                    tetik_zamani = teslim_dt - timedelta(minutes=dk)
-                    if tetik_zamani <= now:
-                        res = send_telegram_interactive(mesaj_olustur(data, dk), d.id)
-                        if res.status_code == 200:
-                            h = {"dk": dk, "gonderildi": True}
-                            degisti = True
-                            gonderilen_sayisi += 1
-                            ilk_gonderim_bu_turda = True
-                        else:
-                            print(f"Telegram gönderim hatası ({d.id}, {dk} dk): {res.status_code} {res.text}")
-                yeni_liste.append(h)
-            if degisti:
-                odevler_ref.document(d.id).update(
-                    {"hatirlatmalar": yeni_liste, "son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
-                )
+        kalan_dk = (teslim_dt - now).total_seconds() / 60
+        if kalan_dk > HATIRLATMA_BASLANGIC_DK:
+            continue  # teslime henüz çok var, hatırlatmalar başlamadı
+
+        son = data.get("son_hatirlatma")
+        gonder = False
+        if not son:
+            gonder = True
         else:
-            if not data.get("gonderildi") and teslim_tarihi <= now_str:
-                res = send_telegram_interactive(mesaj_olustur(data, 0), d.id)
-                if res.status_code == 200:
-                    odevler_ref.document(d.id).update(
-                        {"gonderildi": True, "son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
-                    )
-                    gonderilen_sayisi += 1
-                    ilk_gonderim_bu_turda = True
-                else:
-                    print(f"Telegram gönderim hatası ({d.id}): {res.status_code} {res.text}")
+            try:
+                son_dt = datetime.strptime(son, ZAMAN_FORMAT_SANIYE)
+                if now - son_dt >= timedelta(minutes=aralik_dk):
+                    gonder = True
+            except ValueError:
+                gonder = True
 
-        # Tamamlanana kadar sıklığı gitgide artan tekrar hatırlatmaları
-        if not ilk_gonderim_bu_turda:
-            daha_once_gonderildi = data.get("gonderildi") or any(
-                h.get("gonderildi") for h in (hatirlatmalar or [])
-            )
-            if daha_once_gonderildi:
-                son = data.get("son_hatirlatma")
-                aralik_dk = tekrar_araligi_dakika(teslim_dt, now)
-                tekrar_gerekli = True
-                if son:
-                    try:
-                        son_dt = datetime.strptime(son, ZAMAN_FORMAT_SANIYE)
-                        if now - son_dt < timedelta(minutes=aralik_dk):
-                            tekrar_gerekli = False
-                    except ValueError:
-                        pass
-                if tekrar_gerekli:
-                    kalan_dk = int((teslim_dt - now).total_seconds() // 60)
-                    res = send_telegram_interactive(mesaj_olustur(data, kalan_dk, tekrar=True), d.id)
-                    if res.status_code == 200:
-                        odevler_ref.document(d.id).update(
-                            {"son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
-                        )
-                        gonderilen_sayisi += 1
-                    else:
-                        print(f"Tekrar hatırlatma hatası ({d.id}): {res.status_code} {res.text}")
+        if gonder:
+            res = send_telegram_interactive(mesaj_olustur(data, int(kalan_dk), tekrar=bool(son)), d.id)
+            if res.status_code == 200:
+                odevler_ref.document(d.id).update(
+                    {"gonderildi": True, "son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
+                )
+                gonderilen_sayisi += 1
+            else:
+                print(f"Telegram gönderim hatası ({d.id}): {res.status_code} {res.text}")
 
     eski_kayitlari_temizle()
 
