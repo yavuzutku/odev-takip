@@ -416,6 +416,9 @@ def gunluk_ozet_kontrol_et():
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 # Boşsa model, hesabındaki en yeni Flash model otomatik bulunur (ListModels). İstersen Render'da GEMINI_MODEL ile sabitle.
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "").strip()
+# 3.x ve üstü modeller bu iş için gereksiz büyük ve sık HTTP 400 hatası veriyordu; varsayılan üst sınır 2.5.
+# Render'da GEMINI_MAX_VERSION ile değiştirilebilir (örn. "3" yazarsan 3.x modellere de izin verilir).
+GEMINI_MAX_VERSION = float(os.environ.get("GEMINI_MAX_VERSION", "2.5"))
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 GEMINI_LIST_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 AI_RATE_PER_MIN = int(os.environ.get("AI_RATE_PER_MIN", "20"))
@@ -479,7 +482,9 @@ def _gemini_metin(veri):
 
 
 def gemini_modelleri():
-    """Denenecek modeller: GEMINI_MODEL (varsa) + hesapta gerçekten bulunan en yeni Flash modelleri."""
+    """Denenecek modeller: GEMINI_MODEL (varsa) + hesapta bulunan, GEMINI_MAX_VERSION'ı aşmayan Flash modelleri.
+    'latest'/'preview' takma adları hesaba habersizce yeni nesil modele geçirebildiği için fallback listesinde
+    kullanılmaz; her zaman açıkça 2.5 sürümüne sabitlenir."""
     simdi = time.time()
     if _model_onbellek["liste"] and simdi - _model_onbellek["zaman"] < 3600:
         return _model_onbellek["liste"]
@@ -494,7 +499,7 @@ def gemini_modelleri():
                         or "flash" not in ad or any(x in ad for x in _MODEL_HARIC)):
                     continue
                 v = re.search(r"gemini-(\d+(?:\.\d+)?)", ad)
-                if v:  # basit/hızlı model tercihi: önce lite, sonra kararlı (preview/exp olmayan), sonra en yeni sürüm
+                if v and float(v.group(1)) <= GEMINI_MAX_VERSION:  # basit/hızlı model tercihi: önce lite, sonra kararlı (preview/exp olmayan), sonra en yeni sürüm
                     bulunan.append((("lite" in ad, not re.search(r"preview|exp", ad), float(v.group(1))), ad))
         else:
             print(f"[Gemini] model listesi alınamadı: HTTP {r.status_code} {r.text[:200]}")
@@ -502,7 +507,7 @@ def gemini_modelleri():
         print(f"[Gemini] model listesi bağlantı hatası: {e}")
     bulunan.sort(reverse=True)
     liste = []
-    for ad in ([GEMINI_MODEL] if GEMINI_MODEL else []) + [ad for _, ad in bulunan[:3]] + ["gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-flash-latest"]:
+    for ad in ([GEMINI_MODEL] if GEMINI_MODEL else []) + [ad for _, ad in bulunan[:3]] + ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
         if ad not in liste:
             liste.append(ad)
     if bulunan:
