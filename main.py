@@ -145,12 +145,12 @@ SESSIZ_BITIS_SAAT = 7           # yerel saat 07:00'a kadar hiç bildirim gönder
 # Teslime kalan süreye göre gitgide sıklaşan bildirim aralığı (dk). Liste (eşik_dk, aralık_dk) —
 # kalan süre eşiğin altına düşünce o satırdaki aralık kullanılır; en sona düşerse en sık olan uygulanır.
 BILDIRIM_KADEMELERI = [
-    (60,        30),    # son 1 saat -> 30 dk'da bir
+    (60,        15),    # son 1 saat -> 15 dk'da bir
     (3 * 60,    60),    # son 3 saat -> saatte bir
     (24 * 60,   120),   # teslim günü (son 24 saat) -> 2 saatte bir
     (3 * 24*60, 240),   # 1-3 gün kala -> 4 saatte bir
 ]
-BILDIRIM_UZAK_ARALIK_DK = 360   # 3 günden fazla varsa -> 6 saatte bir (günde 4)
+BILDIRIM_UZAK_ARALIK_DK = 720   # 3 günden fazla varsa -> 12 saatte bir (günde 2)
 BILDIRIM_GECIKME_ARALIK_DK = 60  # süre geçmiş, tamamlanmamış -> saatte bir
 
 
