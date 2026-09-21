@@ -139,19 +139,30 @@ def sure_metni(dakika):
     return f"{gun} gün kaldı"
 
 
-GUNDE_KAC_BILDIRIM = 4          # teslime birkaç gün varsa günde bu kadar bildirim
-ODEV_GUNU_ARALIK_SAAT = 2       # teslim tarihinin günü (yerel) bu kadar saatte bir bildirim
 SESSIZ_BASLANGIC_SAAT = 1       # yerel saat 01:00'dan
 SESSIZ_BITIS_SAAT = 7           # yerel saat 07:00'a kadar hiç bildirim gönderilmez
 
+# Teslime kalan süreye göre gitgide sıklaşan bildirim aralığı (dk). Liste (eşik_dk, aralık_dk) —
+# kalan süre eşiğin altına düşünce o satırdaki aralık kullanılır; en sona düşerse en sık olan uygulanır.
+BILDIRIM_KADEMELERI = [
+    (60,        30),    # son 1 saat -> 30 dk'da bir
+    (3 * 60,    60),    # son 3 saat -> saatte bir
+    (24 * 60,   120),   # teslim günü (son 24 saat) -> 2 saatte bir
+    (3 * 24*60, 240),   # 1-3 gün kala -> 4 saatte bir
+]
+BILDIRIM_UZAK_ARALIK_DK = 360   # 3 günden fazla varsa -> 6 saatte bir (günde 4)
+BILDIRIM_GECIKME_ARALIK_DK = 60  # süre geçmiş, tamamlanmamış -> saatte bir
+
 
 def bildirim_araligi_dk(teslim_dt, now):
-    """Teslim tarihi bugünse (yerel) 2 saatte bir; değilse günde GUNDE_KAC_BILDIRIM defa gelecek aralık (dk)."""
-    yerel_teslim = utc_to_yerel(teslim_dt)
-    yerel_simdi = utc_to_yerel(now)
-    if yerel_teslim.date() <= yerel_simdi.date():
-        return ODEV_GUNU_ARALIK_SAAT * 60
-    return (24 * 60) // GUNDE_KAC_BILDIRIM
+    """Teslim süresi yaklaştıkça bildirim aralığı otomatik kısalır (daha sık gelir)."""
+    kalan_dk = (teslim_dt - now).total_seconds() / 60
+    if kalan_dk < 0:
+        return BILDIRIM_GECIKME_ARALIK_DK
+    for esik_dk, aralik_dk in BILDIRIM_KADEMELERI:
+        if kalan_dk <= esik_dk:
+            return aralik_dk
+    return BILDIRIM_UZAK_ARALIK_DK
 
 
 def sessiz_saatte_mi(now):
@@ -1447,8 +1458,8 @@ def check_assignments():
 
     gonderilen_sayisi = 0
 
-    # Bildirim modeli: teslime birkaç gün varsa günde GUNDE_KAC_BILDIRIM defa, teslim günü (yerel)
-    # ODEV_GUNU_ARALIK_SAAT saatte bir. 01:00-07:00 arası (yerel) hiç bildirim gönderilmez.
+    # Bildirim modeli: teslim süresi yaklaştıkça aralık otomatik kısalır (BILDIRIM_KADEMELERI).
+    # 01:00-07:00 arası (yerel) hiç bildirim gönderilmez.
     if sessiz_saatte_mi(now):
         eski_kayitlari_temizle()
         try:
