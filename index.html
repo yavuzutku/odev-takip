@@ -383,6 +383,41 @@
   .focus-task-title{flex:1;color:var(--text);}
   .focus-empty{color:var(--text-faint);font-size:13px;text-align:center;padding:20px 0;}
 
+
+  /* ---- Alt görevler ---- */
+  .sub-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+  .sub-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;background:var(--bg-soft);font-size:13px;}
+  .sub-row.done .sub-text{text-decoration:line-through;color:var(--text-faint);}
+  .sub-row .sub-text{flex:1;color:var(--text);word-break:break-word;}
+  .sub-row input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;flex:none;cursor:pointer;}
+  .sub-row .sub-x{border:none;background:transparent;color:var(--text-faint);cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;}
+  .sub-row .sub-x:hover{color:var(--danger);}
+  .sub-add{display:flex;gap:6px;}
+  .sub-add input{flex:1;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:13px;font-family:var(--sans);}
+  .task-subs{margin-top:6px;display:flex;flex-direction:column;gap:3px;}
+  .task-sub{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-dim);cursor:pointer;}
+  .task-sub input{accent-color:var(--accent);width:13px;height:13px;flex:none;cursor:pointer;}
+  .task-sub.done span{text-decoration:line-through;color:var(--text-faint);}
+  .sub-progress{font-size:10.5px;font-weight:700;color:var(--accent);background:var(--surface-hi);border-radius:6px;padding:1px 6px;margin-left:2px;}
+  .mini-sub{font-size:10px;color:var(--text-faint);margin-top:2px;}
+
+  /* ---- Gün görünümü boş zaman bildirimi & hafta ekleme butonu ---- */
+  .free-banner{font-size:11.5px;color:var(--accent);background:var(--surface-hi);border:1px dashed var(--accent);border-radius:8px;padding:5px 9px;}
+  .week-col-head .week-add{border:none;background:var(--surface-hi);color:var(--accent);width:20px;height:20px;border-radius:6px;cursor:pointer;font-size:14px;line-height:1;margin-left:6px;}
+  .week-col-head .week-head-r{display:flex;align-items:center;}
+  .mini-title .flag-icon{margin-right:3px;color:var(--danger);vertical-align:-1px;}
+
+  /* ---- Odak modu ekleri ---- */
+  .focus-current{display:none;align-items:center;gap:10px;margin-bottom:16px;padding:8px 12px;border-radius:10px;background:var(--surface);font-size:13px;max-width:420px;width:100%;}
+  .focus-current.show{display:flex;}
+  .focus-current .fc-title{flex:1;font-weight:600;color:var(--text);}
+  .focus-sound{position:absolute;top:20px;left:20px;}
+  .focus-sound.off{opacity:.55;}
+
+  /* ---- Yedekleme ---- */
+  .backup-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .backup-hint{font-size:12px;color:var(--text-faint);margin-top:8px;line-height:1.5;}
+
   /* ---- Konfeti ---- */
   .confetti-piece{position:fixed;top:0;left:0;width:8px;height:8px;pointer-events:none;z-index:200;border-radius:2px;}
 
@@ -604,6 +639,15 @@
           <h3>Ders bazlı yoğunluk</h3>
           <div id="subjectBars"></div>
         </div>
+        <div class="panel-card">
+          <h3>Yedekle / geri yükle</h3>
+          <div class="backup-row">
+            <button class="btn btn-accent" id="backupExportBtn" type="button" style="font-size:12.5px;padding:8px 12px;">Yedek al (JSON)</button>
+            <button class="btn btn-ghost" id="backupImportBtn" type="button" style="font-size:12.5px;padding:8px 12px;">Yedekten yükle</button>
+            <input type="file" id="backupFile" accept="application/json,.json" style="display:none;">
+          </div>
+          <div class="backup-hint">Tüm ödev ve etkinlikler, ders renkleri ve varsayılan hatırlatmalar tek bir dosyaya kaydedilir. Geri yüklerken aynı kimliğe sahip kayıtların üzerine yazılır, yedekte olmayanlara dokunulmaz.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -718,6 +762,14 @@
           <button class="link-btn" id="saveDefaultReminders" type="button">Varsayılan yap</button>
         </div>
       </div>
+      <div class="field" id="subField">
+        <label>Alt görevler (opsiyonel)</label>
+        <div class="sub-list" id="subList"></div>
+        <div class="sub-add">
+          <input type="text" id="subInput" placeholder="Alt görev ekle, Enter'a bas" maxlength="120" autocomplete="off">
+          <button class="btn btn-ghost" id="subAddBtn" type="button" style="padding:7px 12px;font-size:12.5px;">Ekle</button>
+        </div>
+      </div>
       <div class="field">
         <label for="fNotlar">Notlar (opsiyonel)</label>
         <textarea id="fNotlar" rows="3" placeholder="Ek detaylar, bağlantılar..."></textarea>
@@ -753,6 +805,7 @@
     <button class="icon-btn focus-close" id="focusCloseBtn" aria-label="Kapat">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
+    <button class="icon-btn focus-sound" id="focusSoundBtn" aria-label="Yağmur sesi ve gong" title="Yağmur sesi ve gong">🌧</button>
     <div class="focus-len-chips" id="focusLenChips"></div>
     <div class="focus-ring-wrap">
       <svg width="240" height="240" viewBox="0 0 240 240">
@@ -768,6 +821,7 @@
       <button class="btn btn-ghost" id="focusPauseBtn" style="display:none;">Duraklat</button>
       <button class="btn btn-ghost" id="focusResetBtn">Sıfırla</button>
     </div>
+    <div class="focus-current" id="focusCurrent"></div>
     <div class="focus-tasklist" id="focusTaskList"></div>
   </div>
 
@@ -998,6 +1052,15 @@ function parseQuickAdd(text){
   let baseDate = new Date(now);
   let dateFound = false;
 
+  // Süre: "45 dk", "1.5 saat", "2 saat" (tarih ve saat çözümlemesinden önce alınır: "1.5 saat" tarih sanılmasın)
+  let sure_dk = null;
+  const mSure = t.match(/\b(\d+(?:[.,]\d+)?)\s*(saat|sa|dakika|dk)\b(?!\s*(?:sonra|de|da|te|ta))/);
+  if (mSure){
+    const n = parseFloat(mSure[1].replace(",", "."));
+    sure_dk = Math.max(5, Math.round(/^(saat|sa)$/.test(mSure[2]) ? n*60 : n));
+    t = t.replace(mSure[0], " ");
+  }
+
   if (/\byarın\b|\byarin\b/.test(t)){ baseDate.setDate(now.getDate()+1); dateFound=true; t=t.replace(/\byarın\b|\byarin\b/g," "); }
   else if (/\bbugün\b|\bbugun\b/.test(t)){ dateFound=true; t=t.replace(/\bbugün\b|\bbugun\b/g," "); }
   else if (/öbür gün|obur gun|ertesi gün|ertesi gun/.test(t)){ baseDate.setDate(now.getDate()+2); dateFound=true; t=t.replace(/öbür gün|obur gun|ertesi gün|ertesi gun/g," "); }
@@ -1030,6 +1093,15 @@ function parseQuickAdd(text){
     }
   }
 
+  // Öncelik: acil / önemli -> yüksek, sınav ve deneme de yüksek sayılır; "düşük"/"rahat" -> düşük
+  // (\b Türkçe harflerde çalışmadığı için kelime sınırı boşluklarla kontrol edilir)
+  let oncelik = "orta";
+  const reYuksek = /(^|\s)(acil|çok önemli|önemli|onemli|yüksek öncelik|yuksek oncelik)(?=\s|$)/g;
+  const reDusuk = /(^|\s)(düşük öncelik|dusuk oncelik|önemsiz|onemsiz|rahat)(?=\s|$)/g;
+  if (reYuksek.test(t)){ oncelik = "yuksek"; t = t.replace(reYuksek, " "); }
+  else if (reDusuk.test(t)){ oncelik = "dusuk"; t = t.replace(reDusuk, " "); }
+  else if (/(^|\s)(sınav|sinav|deneme|quiz|yazılı|yazili)/.test(t)){ oncelik = "yuksek"; }
+
   let hour = null, minute = 0, timeFound = false;
   const mSaat1 = t.match(/\b(\d{1,2})[:.](\d{2})\b/);
   const mSaat2 = t.match(/\bsaat\s*(\d{1,2})\b/);
@@ -1056,12 +1128,20 @@ function parseQuickAdd(text){
     const re = new RegExp("\\b"+d.toLowerCase()+"\\b");
     if (re.test(t)){ ders = d; t = t.replace(re," "); break; }
   }
+  if (!ders){
+    // Kayıtlı ders yoksa yaygın ders adlarından tanı (çekim ekleriyle: "matematik", "fizik'ten" vb. kökü bulur)
+    const YAYGIN = ["matematik","geometri","fizik","kimya","biyoloji","türkçe","edebiyat","tarih","coğrafya","felsefe","almanca","ingilizce","fransızca","din kültürü","müzik","resim","beden eğitimi","bilgisayar","fen bilimleri","sosyal bilgiler"];
+    for (const d of YAYGIN){
+      const re = new RegExp("\\b"+d+"\\w*");
+      if (re.test(t)){ ders = d.charAt(0).toUpperCase() + d.slice(1); break; }
+    }
+  }
 
   let baslik = t.replace(/\s+/g," ").trim();
   if (!baslik) baslik = ders || "Yeni kayıt";
   baslik = baslik.charAt(0).toUpperCase() + baslik.slice(1);
 
-  return { baslik, ders, tur, start: baseDate };
+  return { baslik, ders, tur, start: baseDate, sure_dk, oncelik };
 }
 
 let items = [];
@@ -1073,6 +1153,7 @@ let extraReminderChips = [];
 let selectedPriority = "orta";
 let selectedType = "gorev";
 let selectedRepeat = "yok";
+let modalSubtasks = [];
 let searchText = "";
 let hiddenSubjects = new Set();
 
@@ -1497,9 +1578,10 @@ function renderWeekView(){
     col.className = "week-col" + (key===todayKey ? " today" : "");
     col.setAttribute("data-daykey", key);
     col.innerHTML =
-      '<div class="week-col-head">'+dayNames[i]+' <span>'+d.getDate()+'</span></div>'+
+      '<div class="week-col-head"><span class="week-head-l">'+dayNames[i]+'</span><span class="week-head-r"><span>'+d.getDate()+'</span><button class="week-add" type="button" aria-label="Bu güne ekle" title="Bu güne ekle">+</button></span></div>'+
       '<div class="week-col-body">'+ dayOccs.map(weekCardHtml).join("") +'</div>';
     col.querySelector(".week-col-head").addEventListener("click", () => openModal(null, key));
+    col.querySelector(".week-add").addEventListener("click", (e) => { e.stopPropagation(); openModal(null, key); });
     col.addEventListener("dragover", (e) => { e.preventDefault(); col.classList.add("drop-target"); });
     col.addEventListener("dragleave", () => col.classList.remove("drop-target"));
     col.addEventListener("drop", (e) => {
@@ -1521,17 +1603,35 @@ function renderDayView(){
   const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate()+1);
   const occs = expandItemsForRange(visibleItems(), dayStart, dayEnd);
   const byHour = {};
-  occs.forEach(o => { const h = o._occStart.getHours(); (byHour[h] = byHour[h] || []).push(o); });
+  // Ajanda 07:00–23:00 aralığını gösterir; 07:00'den önceki kayıtlar 07:00 satırında toplanır.
+  const DAY_FIRST_HOUR = 7, DAY_LAST_HOUR = 23;
+  occs.forEach(o => { const h = Math.min(DAY_LAST_HOUR, Math.max(DAY_FIRST_HOUR, o._occStart.getHours())); (byHour[h] = byHour[h] || []).push(o); });
   Object.keys(byHour).forEach(h => byHour[h].sort((a,b)=> a._occStart - b._occStart));
+  // Otomatik boş çalışma zamanı tespiti: her boşluk başladığı saatin satırında bildirim olarak görünür.
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const isToday = dayStart.getTime() === todayStart.getTime();
+  const freeByHour = {};
+  if (dayStart.getTime() >= todayStart.getTime()){
+    dayFreeWindows(dayStart, isToday ? new Date() : undefined).forEach(([fs, fe]) => {
+      const h = Math.min(DAY_LAST_HOUR, Math.max(DAY_FIRST_HOUR, fs.getHours()));
+      (freeByHour[h] = freeByHour[h] || []).push([fs, fe]);
+    });
+  }
+  function fmtFreeDur(ms){
+    const m = Math.round(ms/60000), hh = Math.floor(m/60), mm = m%60;
+    return (hh ? hh + " sa " : "") + (mm ? mm + " dk" : "").trim();
+  }
 
-  for (let h = 0; h < 24; h++){
+  for (let h = DAY_FIRST_HOUR; h <= DAY_LAST_HOUR; h++){
     const row = document.createElement("div");
     row.className = "day-hour-row";
     row.setAttribute("data-daykey", localDayKey(dayStart));
     const hourItems = byHour[h] || [];
     row.innerHTML =
       '<div class="day-hour-label">'+String(h).padStart(2,"0")+':00</div>'+
-      '<div class="day-hour-body">'+ hourItems.map(weekCardHtml).join("") +'</div>';
+      '<div class="day-hour-body">'+
+        (freeByHour[h] || []).map(([fs, fe]) => '<div class="free-banner">🕐 ' + fmtTime(fs) + '–' + fmtTime(fe) + ' arası boş (' + fmtFreeDur(fe - fs) + ') — çalışmak için uygun</div>').join("") +
+        hourItems.map(weekCardHtml).join("") +'</div>';
     row.addEventListener("dragover", (e) => { e.preventDefault(); row.classList.add("drop-target"); });
     row.addEventListener("dragleave", () => row.classList.remove("drop-target"));
     row.addEventListener("drop", (e) => {
@@ -1556,7 +1656,8 @@ function weekCardHtml(o){
     (o._virtual ? '' : ' draggable="true" data-drag-id="'+o.id+'"') +
     ' style="border-left-color:'+colorFor(o.ders)+'">' +
     '<div class="mini-time">'+timeLabel+'</div>' +
-    '<div class="mini-title">'+escapeHtml(o.baslik||"(başlıksız)")+'</div>' +
+    '<div class="mini-title">'+(o.oncelik === "yuksek" ? flagIcon() : "")+escapeHtml(o.baslik||"(başlıksız)")+'</div>' +
+    ((o.altgorevler && o.altgorevler.length) ? '<div class="mini-sub">✓ '+o.altgorevler.filter(x=>x.d).length+'/'+o.altgorevler.length+'</div>' : '') +
   '</div>';
 }
 
@@ -1592,7 +1693,10 @@ function taskHtml(it){
           (it.notlar ? noteIcon() : "") +
           (it.tekrar && it.tekrar.tip && it.tekrar.tip!=="yok" ? repeatIcon() : "") +
         '</div>' +
-        '<div class="task-meta'+(overdue?" danger":"")+'">'+(it.ders?escapeHtml(it.ders)+" · ":"")+fmtDayLabel(d)+", "+timeStr+'</div>' +
+        '<div class="task-meta'+(overdue?" danger":"")+'">'+(it.ders?escapeHtml(it.ders)+" · ":"")+fmtDayLabel(d)+", "+timeStr+
+          ((it.altgorevler && it.altgorevler.length) ? ' <span class="sub-progress">'+it.altgorevler.filter(x=>x.d).length+'/'+it.altgorevler.length+'</span>' : '')+'</div>' +
+        ((it.altgorevler && it.altgorevler.length) ? '<div class="task-subs">'+it.altgorevler.map((x,i)=>
+          '<label class="task-sub'+(x.d?" done":"")+'"><input type="checkbox" data-sub="'+it.id+':'+i+'"'+(x.d?" checked":"")+'><span>'+escapeHtml(x.t)+'</span></label>').join("")+'</div>' : '') +
       '</div>' +
       '<button class="task-del" data-del="'+it.id+'" aria-label="Sil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
     '</div>'
@@ -1848,6 +1952,18 @@ function renderAgenda(){
       if (newVal) fireConfetti(e.clientX, e.clientY);
     });
   });
+  content.querySelectorAll("[data-sub]").forEach(el => {
+    el.addEventListener("click", (e) => e.stopPropagation());
+    el.closest(".task-sub").addEventListener("click", (e) => e.stopPropagation());
+    el.addEventListener("change", () => {
+      const [id, idx] = el.getAttribute("data-sub").split(":");
+      const it = items.find(x => x.id === id);
+      if (!it || !it.altgorevler) return;
+      const yeni = it.altgorevler.map((x, i) => i === parseInt(idx, 10) ? {t:x.t, d:el.checked} : x);
+      updateDoc(doc(db, "odevler", id), {altgorevler: yeni});
+      if (el.checked && yeni.every(x => x.d)) fireConfetti(el.getBoundingClientRect().left, el.getBoundingClientRect().top);
+    });
+  });
   content.querySelectorAll("[data-open]").forEach(el => {
     el.addEventListener("click", () => openModal(el.getAttribute("data-open")));
   });
@@ -1890,7 +2006,9 @@ quickaddInput.addEventListener("input", () => {
   quickaddPreview.innerHTML =
     '<span class="qa-badge">' + (p.tur==="etkinlik" ? "Etkinlik" : "Görev") + '</span>' +
     '<b>' + escapeHtml(p.baslik) + '</b>' + (p.ders ? ' · ' + escapeHtml(p.ders) : '') +
-    ' — ' + fmtDayLabel(p.start) + ', ' + fmtTime(p.start);
+    ' — ' + fmtDayLabel(p.start) + ', ' + fmtTime(p.start) +
+    (p.sure_dk ? ' <span class="qa-badge">' + (p.sure_dk >= 60 && p.sure_dk % 60 === 0 ? (p.sure_dk/60) + ' sa' : p.sure_dk + ' dk') + '</span>' : '') +
+    (p.oncelik === "yuksek" ? ' <span class="qa-badge">Acil</span>' : (p.oncelik === "dusuk" ? ' <span class="qa-badge">Düşük</span>' : ''));
   quickaddPreview.classList.add("show");
 });
 quickaddInput.addEventListener("keydown", (e) => {
@@ -1946,7 +2064,7 @@ async function parseSmart(text){
     }catch(e){ console.warn("AI ayrıştırma başarısız, yerel ayrıştırıcı kullanılıyor:", e); }
   }
   const p = parseQuickAdd(text);
-  return {list:[Object.assign({}, p, {oncelik:"orta", notlar:"", sure_dk:null, tekrar:"yok"})], ai:false};
+  return {list:[Object.assign({}, p, {oncelik:p.oncelik||"orta", notlar:"", sure_dk:p.sure_dk||null, tekrar:"yok"})], ai:false};
 }
 function buildQuickPayload(p){
   const payload = {
@@ -2014,6 +2132,55 @@ document.getElementById("quickaddDetay").addEventListener("click", async () => {
 });
 quickaddOverlay.addEventListener("click", (e) => { if (e.target === quickaddOverlay) closeQuickAdd(); });
 
+// ---- Yedekleme (JSON) ----
+document.getElementById("backupExportBtn").addEventListener("click", () => {
+  const veri = {
+    uygulama: "odev-takip", surum: 1, tarih: new Date().toISOString(),
+    kayitlar: items,
+    kategoriRenkleri: (function(){ try{ return JSON.parse(localStorage.getItem("odevKategoriRenkleri") || "{}"); }catch(e){ return {}; } })(),
+    varsayilanHatirlatma: (function(){ try{ return JSON.parse(localStorage.getItem("odevVarsayilanHatirlatma") || "null"); }catch(e){ return null; } })(),
+  };
+  const blob = new Blob([JSON.stringify(veri, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "odev-takip-yedek-" + localDayKey(new Date()) + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast("Yedek indirildi (" + items.length + " kayıt) ✓", true);
+});
+document.getElementById("backupImportBtn").addEventListener("click", () => document.getElementById("backupFile").click());
+document.getElementById("backupFile").addEventListener("change", async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  let veri;
+  try{ veri = JSON.parse(await file.text()); }catch(err){ toast("Dosya okunamadı: geçerli bir JSON değil."); return; }
+  const kayitlar = Array.isArray(veri) ? veri : (veri && Array.isArray(veri.kayitlar) ? veri.kayitlar : null);
+  if (!kayitlar || !kayitlar.length){ toast("Yedekte kayıt bulunamadı."); return; }
+  const gecerli = kayitlar.filter(k => k && typeof k === "object" && k.baslik && k.teslim_tarihi);
+  if (!gecerli.length){ toast("Yedek dosyası bu uygulamaya ait görünmüyor."); return; }
+  if (!confirm(gecerli.length + " kayıt geri yüklenecek. Aynı kimliğe sahip kayıtların üzerine yazılır, yedekte olmayanlara dokunulmaz. Devam edilsin mi?")) return;
+  try{
+    for (let i = 0; i < gecerli.length; i += 20){
+      await Promise.all(gecerli.slice(i, i + 20).map(k => {
+        const {id, ...veriKisim} = k;
+        return id ? setDoc(doc(db, "odevler", String(id)), veriKisim) : addDoc(odevlerRef, veriKisim);
+      }));
+    }
+    if (veri && veri.kategoriRenkleri && typeof veri.kategoriRenkleri === "object"){
+      try{ localStorage.setItem("odevKategoriRenkleri", JSON.stringify(veri.kategoriRenkleri)); }catch(err){}
+    }
+    if (veri && Array.isArray(veri.varsayilanHatirlatma)){
+      try{ localStorage.setItem("odevVarsayilanHatirlatma", JSON.stringify(veri.varsayilanHatirlatma)); }catch(err){}
+    }
+    toast(gecerli.length + " kayıt geri yüklendi ✓", true);
+    setTimeout(() => location.reload(), 900);
+  }catch(err){
+    console.error(err);
+    toast("Geri yükleme sırasında hata oluştu.");
+  }
+});
+
 // ---- Yıllık ısı haritası ----
 let heatmapYear = new Date().getFullYear();
 function renderHeatmap(){
@@ -2078,7 +2245,105 @@ document.addEventListener("mouseout", (e) => {
 });
 
 // ---- Odak modu (Pomodoro) ----
-const FOCUS_LENGTHS = [{m:25,label:"25 dk"},{m:50,label:"50 dk"},{m:5,label:"5 dk (mola)"}];
+const FOCUS_LENGTHS = [{m:25,label:"25 dk Pomodoro"},{m:50,label:"50 dk Derin Çalışma"},{m:5,label:"5 dk mola"},{m:15,label:"15 dk mola"}];
+const FOCUS_BREAK_MAX = 15; // bu süre ve altı "mola" sayılır
+let focusSelectedId = null;
+
+// ---- Ses: Web Audio API ile sentezlenen yağmur sesi ve gong (dosya gerekmez) ----
+let audioCtx = null, rainNodes = null;
+let focusSoundOn = (function(){ try{ return localStorage.getItem("odevOdakSes") !== "0"; }catch(e){ return true; } })();
+function getAudioCtx(){
+  if (!audioCtx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function makeNoiseBuffer(ctx, kind){
+  const len = ctx.sampleRate * 4;
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++){
+    const data = buf.getChannelData(ch);
+    let last = 0;
+    for (let i = 0; i < len; i++){
+      const w = Math.random()*2 - 1;
+      if (kind === "brown"){ last = (last + 0.02*w) / 1.02; data[i] = last * 3.5; }
+      else data[i] = w;
+    }
+  }
+  return buf;
+}
+function startRain(){
+  if (!focusSoundOn || rainNodes) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+  const now = ctx.currentTime;
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, now);
+  master.gain.exponentialRampToValueAtTime(0.35, now + 1.5);
+  master.connect(ctx.destination);
+  // Yağış tıslaması: beyaz gürültü, yüksek frekans bandı
+  const hiss = ctx.createBufferSource(); hiss.buffer = makeNoiseBuffer(ctx, "white"); hiss.loop = true;
+  const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 900;
+  const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 7500;
+  const hissGain = ctx.createGain(); hissGain.gain.value = 0.45;
+  hiss.connect(hp); hp.connect(lp); lp.connect(hissGain); hissGain.connect(master);
+  // Derinlik: kahverengi gürültü, alçak frekans
+  const rumble = ctx.createBufferSource(); rumble.buffer = makeNoiseBuffer(ctx, "brown"); rumble.loop = true;
+  const rlp = ctx.createBiquadFilter(); rlp.type = "lowpass"; rlp.frequency.value = 500;
+  const rumbleGain = ctx.createGain(); rumbleGain.gain.value = 0.5;
+  rumble.connect(rlp); rlp.connect(rumbleGain); rumbleGain.connect(master);
+  // Yavaş dalgalanma: yağmurun şiddeti hafifçe değişir
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.11;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.08;
+  lfo.connect(lfoGain); lfoGain.connect(hissGain.gain);
+  hiss.start(); rumble.start(); lfo.start();
+  rainNodes = {master, sources:[hiss, rumble, lfo]};
+}
+function stopRain(){
+  if (!rainNodes) return;
+  const {master, sources} = rainNodes;
+  rainNodes = null;
+  const ctx = audioCtx;
+  try{
+    const now = ctx.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), now);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+    setTimeout(() => { sources.forEach(n => { try{ n.stop(); }catch(e){} }); try{ master.disconnect(); }catch(e){} }, 650);
+  }catch(e){ sources.forEach(n => { try{ n.stop(); }catch(_){} }); }
+}
+function playGong(){
+  if (!focusSoundOn) return;
+  const ctx = getAudioCtx(); if (!ctx) return;
+  const now = ctx.currentTime;
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, now);
+  master.gain.exponentialRampToValueAtTime(0.55, now + 0.02);
+  master.gain.exponentialRampToValueAtTime(0.0001, now + 7);
+  master.connect(ctx.destination);
+  // Gong: uyumsuz (inharmonik) kısmi tonlar + hafif detune ile "titreşen" tını
+  const partials = [[98,1],[147,0.7],[196,0.55],[247,0.4],[311,0.3],[392,0.2],[523,0.12]];
+  partials.forEach(([f, a], i) => {
+    [1, 1.004].forEach(det => {
+      const osc = ctx.createOscillator(); osc.type = "sine"; osc.frequency.value = f * det;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(a * 0.35, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 6.5 - i*0.55);
+      osc.connect(g); g.connect(master);
+      osc.start(now); osc.stop(now + 7);
+    });
+  });
+}
+function updateFocusSoundBtn(){
+  const b = document.getElementById("focusSoundBtn");
+  if (!b) return;
+  b.classList.toggle("off", !focusSoundOn);
+  b.textContent = focusSoundOn ? "🌧" : "🔇";
+  b.title = focusSoundOn ? "Yağmur sesi ve gong: açık" : "Yağmur sesi ve gong: kapalı";
+}
 let focusSelectedLen = 25;
 let focusRemainingSec = 25*60;
 let focusTotalSec = 25*60;
@@ -2116,11 +2381,14 @@ function resetFocusTimer(){
   focusRemainingSec = focusTotalSec;
   document.getElementById("focusStartBtn").style.display = "inline-flex";
   document.getElementById("focusPauseBtn").style.display = "none";
-  document.getElementById("focusModeLbl").textContent = "ÇALIŞMA";
+  document.getElementById("focusModeLbl").textContent = focusSelectedLen <= FOCUS_BREAK_MAX ? "MOLA" : (focusSelectedLen >= 50 ? "DERİN ÇALIŞMA" : "ÇALIŞMA");
+  stopRain();
   updateFocusRing();
 }
 function startFocusTimer(){
   focusRunning = true;
+  getAudioCtx();   // Başlat tıklaması kullanıcı etkileşimidir; tarayıcı sesi bu sayede serbest bırakır
+  startRain();
   document.getElementById("focusStartBtn").style.display = "none";
   document.getElementById("focusPauseBtn").style.display = "inline-flex";
   focusTimerId = setInterval(() => {
@@ -2137,10 +2405,13 @@ function startFocusTimer(){
 }
 function pauseFocusTimer(){
   clearInterval(focusTimerId); focusTimerId = null; focusRunning = false;
+  stopRain();
   document.getElementById("focusStartBtn").style.display = "inline-flex";
   document.getElementById("focusPauseBtn").style.display = "none";
 }
 function onFocusComplete(){
+  stopRain();
+  playGong();
   const rect = document.getElementById("focusOverlay").getBoundingClientRect();
   fireConfetti(rect.width/2, rect.height/2 + 60);
   toast("Süre doldu! Mola zamanı 🎉", true);
@@ -2153,7 +2424,7 @@ function renderFocusTaskList(){
     .sort((a,b) => (a.tamamlandi - b.tamamlandi) || a.teslim_tarihi.localeCompare(b.teslim_tarihi));
   if (!todays.length){ wrap.innerHTML = '<div class="focus-empty">Bugün için görev yok 🎉</div>'; return; }
   wrap.innerHTML = todays.map(it =>
-    '<div class="focus-task-row' + (it.tamamlandi?" done":"") + '">' +
+    '<div class="focus-task-row' + (it.tamamlandi?" done":"") + (it.id===focusSelectedId?" selected":"") + '" data-frow="' + it.id + '">' +
       '<div class="task-check' + (it.tamamlandi?" checked":"") + '" data-fcheck="' + it.id + '">' +
         (it.tamamlandi ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
       '</div>' +
@@ -2162,16 +2433,43 @@ function renderFocusTaskList(){
   ).join("");
   wrap.querySelectorAll("[data-fcheck]").forEach(el => {
     el.addEventListener("click", (e) => {
+      e.stopPropagation();
       const id = el.getAttribute("data-fcheck");
       const it = items.find(x => x.id === id);
       const newVal = !it.tamamlandi;
       updateDoc(doc(db,"odevler",id), {tamamlandi:newVal});
-      if (newVal) fireConfetti(e.clientX, e.clientY);
+      if (newVal){ fireConfetti(e.clientX, e.clientY); if (focusSelectedId === id) focusSelectedId = null; }
+      renderFocusCurrent();
     });
+  });
+  // Satıra tıklayınca o ödev "odaklanılan ödev" olur
+  wrap.querySelectorAll("[data-frow]").forEach(el => {
+    el.addEventListener("click", () => {
+      const id = el.getAttribute("data-frow");
+      focusSelectedId = (focusSelectedId === id) ? null : id;
+      renderFocusTaskList();
+      renderFocusCurrent();
+    });
+  });
+  renderFocusCurrent();
+}
+function renderFocusCurrent(){
+  const box = document.getElementById("focusCurrent");
+  const it = focusSelectedId ? items.find(x => x.id === focusSelectedId) : null;
+  if (!it || it.tamamlandi){ focusSelectedId = null; box.classList.remove("show"); box.innerHTML = ""; return; }
+  box.classList.add("show");
+  box.innerHTML = '<span>Odak:</span><span class="fc-title">' + escapeHtml(it.baslik || "(başlıksız)") + '</span>' +
+    '<button class="btn btn-accent" id="focusDoneBtn" type="button" style="padding:6px 12px;font-size:12.5px;">✓ Tamamla</button>';
+  document.getElementById("focusDoneBtn").addEventListener("click", (e) => {
+    updateDoc(doc(db,"odevler",it.id), {tamamlandi:true});
+    fireConfetti(e.clientX, e.clientY);
+    focusSelectedId = null;
+    renderFocusTaskList();
   });
 }
 function openFocusOverlay(){
   document.getElementById("focusOverlay").classList.add("open");
+  updateFocusSoundBtn();
   renderFocusLenChips();
   resetFocusTimer();
   renderFocusTaskList();
@@ -2186,6 +2484,16 @@ document.getElementById("focusCloseBtn").addEventListener("click", closeFocusOve
 document.getElementById("focusStartBtn").addEventListener("click", startFocusTimer);
 document.getElementById("focusPauseBtn").addEventListener("click", pauseFocusTimer);
 document.getElementById("focusResetBtn").addEventListener("click", resetFocusTimer);
+document.getElementById("focusSoundBtn").addEventListener("click", () => {
+  focusSoundOn = !focusSoundOn;
+  try{ localStorage.setItem("odevOdakSes", focusSoundOn ? "1" : "0"); }catch(e){}
+  if (!focusSoundOn) stopRain(); else if (focusRunning) { getAudioCtx(); startRain(); }
+  updateFocusSoundBtn();
+});
+// Esc ile odak modundan çık
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.getElementById("focusOverlay").classList.contains("open")) closeFocusOverlay();
+});
 
 // ---- Boşluklarım paneli ----
 function renderFreeSlotPanel(){
@@ -2342,12 +2650,23 @@ document.getElementById("searchInput").addEventListener("input", (e) => {
   renderCalendar(); renderAgenda();
 });
 
+function anyBlockingOverlayOpen(){
+  return overlayIsOpen() || quickaddOverlay.classList.contains("open") || document.getElementById("focusOverlay").classList.contains("open");
+}
 document.addEventListener("keydown", (e) => {
-  if (e.key === "n" && !overlayIsOpen()){
+  if (e.key === "Escape" && quickaddOverlay.classList.contains("open")){ closeQuickAdd(); return; }
+  // Ctrl+K / Cmd+K: her yerden hızlı ekleme penceresini açar
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k"){
+    e.preventDefault();
+    if (!anyBlockingOverlayOpen()) openQuickAdd();
+    return;
+  }
+  // N: yazı alanında değilken hızlı ekleme
+  if ((e.key === "n" || e.key === "N") && !e.ctrlKey && !e.metaKey && !e.altKey && !anyBlockingOverlayOpen()){
     const tag = document.activeElement.tagName;
-    if (tag !== "INPUT" && tag !== "TEXTAREA"){
+    if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT" && !document.activeElement.isContentEditable){
       e.preventDefault();
-      openModal(null);
+      openQuickAdd();
     }
   }
   if (e.key === "Escape" && overlayIsOpen()) closeModal();
@@ -2553,6 +2872,7 @@ function openModal(id, dayKeyForNew){
   fBitisManuallyEdited = false;
   fBitisAutoFilled = false;
   fSureSaat.value = "";
+  modalSubtasks = [];
   suggestBox.classList.remove("show");
   suggestBox.innerHTML = "";
   document.getElementById("modalTitle").textContent = id ? "Kaydı Düzenle" : "Yeni Kayıt";
@@ -2582,6 +2902,7 @@ function openModal(id, dayKeyForNew){
     selectedReminders = new Set(existingDks.length ? existingDks : loadDefaultReminders());
     fSure.value = it.sure_dk || "";
     selectedBildirimAcik = !it.bildirim_kapali;
+    modalSubtasks = (it.altgorevler || []).map(x => ({t:x.t, d:!!x.d}));
   } else {
     fBaslik.value = "";
     fDers.value = "";
@@ -2605,10 +2926,41 @@ function openModal(id, dayKeyForNew){
   document.getElementById("repeatEndRow").style.display = selectedRepeat==="yok" ? "none" : "flex";
   renderPriorityChips();
   renderReminderChips();
+  renderSubtaskEditor();
   overlay.classList.add("open");
   setTimeout(() => fBaslik.focus(), 50);
 }
 function closeModal(){ overlay.classList.remove("open"); editingId = null; }
+
+// ---- Alt görevler (modal içi düzenleyici) ----
+function renderSubtaskEditor(){
+  const list = document.getElementById("subList");
+  list.innerHTML = modalSubtasks.map((x, i) =>
+    '<div class="sub-row'+(x.d?" done":"")+'">' +
+      '<input type="checkbox" data-sub-i="'+i+'"'+(x.d?" checked":"")+'>' +
+      '<span class="sub-text">'+escapeHtml(x.t)+'</span>' +
+      '<button class="sub-x" type="button" data-sub-del="'+i+'" aria-label="Alt görevi sil">×</button>' +
+    '</div>').join("");
+  list.querySelectorAll("[data-sub-i]").forEach(el => el.addEventListener("change", () => {
+    modalSubtasks[parseInt(el.getAttribute("data-sub-i"),10)].d = el.checked; renderSubtaskEditor();
+  }));
+  list.querySelectorAll("[data-sub-del]").forEach(el => el.addEventListener("click", () => {
+    modalSubtasks.splice(parseInt(el.getAttribute("data-sub-del"),10), 1); renderSubtaskEditor();
+  }));
+}
+function addSubtaskFromInput(){
+  const inp = document.getElementById("subInput");
+  const t = inp.value.trim();
+  if (!t) return;
+  modalSubtasks.push({t, d:false});
+  inp.value = "";
+  renderSubtaskEditor();
+  inp.focus();
+}
+document.getElementById("subAddBtn").addEventListener("click", addSubtaskFromInput);
+document.getElementById("subInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter"){ e.preventDefault(); e.stopPropagation(); addSubtaskFromInput(); }
+});
 
 document.getElementById("addBtn").addEventListener("click", openQuickAdd);
 document.getElementById("cancelBtn").addEventListener("click", closeModal);
@@ -2634,8 +2986,11 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     dk, gonderildi: eskiHatirlatma.hasOwnProperty(dk) ? eskiHatirlatma[dk] : false
   }));
 
+  const bekleyenSub = document.getElementById("subInput").value.trim();
+  if (bekleyenSub){ modalSubtasks.push({t:bekleyenSub, d:false}); document.getElementById("subInput").value = ""; }
   const payload = {
     baslik, ders, teslim_tarihi: utcVal, oncelik: selectedPriority, notlar, hatirlatmalar,
+    altgorevler: modalSubtasks.map(x => ({t:x.t, d:!!x.d})),
     tur: selectedType,
     tekrar: { tip: selectedRepeat, bitis: (selectedRepeat!=="yok" && fTekrarBitis.value) ? fTekrarBitis.value : null },
     bildirim_kapali: !selectedBildirimAcik,
