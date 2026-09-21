@@ -139,34 +139,24 @@ def sure_metni(dakika):
     return f"{gun} gün kaldı"
 
 
-AYARLAR_VARSAYILAN = {"saat_araligi": 4, "aktif_gunler": [0, 1, 2, 3, 4, 5, 6]}  # 0=Pazartesi ... 6=Pazar
-HATIRLATMA_BASLANGIC_DK = 24 * 60  # teslime bu kadar dk kalınca hatırlatmalar başlar (sabit, basit tutmak için)
-_ayarlar_onbellek = {"veri": None, "zaman": 0.0}
+GUNDE_KAC_BILDIRIM = 4          # teslime birkaç gün varsa günde bu kadar bildirim
+ODEV_GUNU_ARALIK_SAAT = 2       # teslim tarihinin günü (yerel) bu kadar saatte bir bildirim
+SESSIZ_BASLANGIC_SAAT = 1       # yerel saat 01:00'dan
+SESSIZ_BITIS_SAAT = 7           # yerel saat 07:00'a kadar hiç bildirim gönderilmez
 
 
-def bildirim_ayarlarini_al():
-    """Uygulamadaki Ayarlar panelinden (Firestore: ayarlar/bildirim) okunur; yoksa varsayılan kullanılır.
-    120 sn önbelleklenir ki her check-assignments çağrısı Firestore'u yormasın."""
-    simdi = time.time()
-    if _ayarlar_onbellek["veri"] is not None and simdi - _ayarlar_onbellek["zaman"] < 120:
-        return _ayarlar_onbellek["veri"]
-    veri = dict(AYARLAR_VARSAYILAN)
-    try:
-        snap = db.collection("ayarlar").document("bildirim").get()
-        if snap.exists:
-            d = snap.to_dict() or {}
-            sa = d.get("saat_araligi")
-            if isinstance(sa, (int, float)) and sa > 0:
-                veri["saat_araligi"] = sa
-            gunler = d.get("aktif_gunler")
-            if isinstance(gunler, list) and gunler:
-                temiz = [g for g in gunler if isinstance(g, int) and 0 <= g <= 6]
-                if temiz:
-                    veri["aktif_gunler"] = temiz
-    except Exception as e:
-        print(f"[Ayarlar] okunamadı, varsayılan kullanılıyor: {e}")
-    _ayarlar_onbellek["veri"], _ayarlar_onbellek["zaman"] = veri, simdi
-    return veri
+def bildirim_araligi_dk(teslim_dt, now):
+    """Teslim tarihi bugünse (yerel) 2 saatte bir; değilse günde GUNDE_KAC_BILDIRIM defa gelecek aralık (dk)."""
+    yerel_teslim = utc_to_yerel(teslim_dt)
+    yerel_simdi = utc_to_yerel(now)
+    if yerel_teslim.date() <= yerel_simdi.date():
+        return ODEV_GUNU_ARALIK_SAAT * 60
+    return (24 * 60) // GUNDE_KAC_BILDIRIM
+
+
+def sessiz_saatte_mi(now):
+    saat = utc_to_yerel(now).hour
+    return SESSIZ_BASLANGIC_SAAT <= saat < SESSIZ_BITIS_SAAT
 
 
 def mesaj_olustur(data, dakika, tekrar=False):
@@ -187,7 +177,7 @@ def mesaj_olustur(data, dakika, tekrar=False):
     if data.get("notlar"):
         satirlar.append(f"📝 *Not:* {data.get('notlar')}")
     satirlar.append(f"⏰ *{sure_metni(dakika)}*")
-    satirlar.append(f"🗓️ *Teslim:* {data.get('teslim_tarihi')}")
+    satirlar.append(f"🗓️ *Teslim:* {_yerel_str(data.get('teslim_tarihi'), cikti='%d.%m.%Y %H:%M')}")
     satirlar.append("")
     satirlar.append("Tamamladıysan aşağıdaki butona bas 👇")
     return "\n".join(satirlar)
@@ -204,7 +194,7 @@ def liste_metni(baslik, docs):
         satirlar.append(f"{durum} *{v.get('baslik')}* ({v.get('ders') or '-'})")
         if v.get("notlar"):
             satirlar.append(f"   📝 {v.get('notlar')}")
-        satirlar.append(f"   ⏰ {v.get('teslim_tarihi')}")
+        satirlar.append(f"   ⏰ {_yerel_str(v.get('teslim_tarihi'), cikti='%d.%m.%Y %H:%M')}")
         satirlar.append("")
     return "\n".join(satirlar).strip()
 
@@ -1244,7 +1234,7 @@ def webhook_receive():
                 answer_callback_query(cq["id"], "30 dakika ertelendi")
                 if sonuc:
                     eski_data, yeni = sonuc
-                    send_telegram(f"⏰ *{eski_data.get('baslik')}* 30 dakika ertelendi.\n🗓️ Yeni zaman: {yeni.strftime(ZAMAN_FORMAT)}")
+                    send_telegram(f"⏰ *{eski_data.get('baslik')}* 30 dakika ertelendi.\n🗓️ Yeni zaman: {utc_to_yerel(yeni).strftime('%d.%m.%Y %H:%M')}")
 
             elif cq_data.startswith("snooze60_"):
                 doc_id = cq_data[len("snooze60_"):]
@@ -1252,7 +1242,7 @@ def webhook_receive():
                 answer_callback_query(cq["id"], "1 saat ertelendi")
                 if sonuc:
                     eski_data, yeni = sonuc
-                    send_telegram(f"⏰ *{eski_data.get('baslik')}* 1 saat ertelendi.\n🗓️ Yeni zaman: {yeni.strftime(ZAMAN_FORMAT)}")
+                    send_telegram(f"⏰ *{eski_data.get('baslik')}* 1 saat ertelendi.\n🗓️ Yeni zaman: {utc_to_yerel(yeni).strftime('%d.%m.%Y %H:%M')}")
 
             elif cq_data.startswith("snoozetom_"):
                 doc_id = cq_data[len("snoozetom_"):]
@@ -1260,7 +1250,7 @@ def webhook_receive():
                 answer_callback_query(cq["id"], "Yarına ertelendi")
                 if sonuc:
                     eski_data, yeni = sonuc
-                    send_telegram(f"⏰ *{eski_data.get('baslik')}* yarına ertelendi.\n🗓️ Yeni zaman: {yeni.strftime(ZAMAN_FORMAT)}")
+                    send_telegram(f"⏰ *{eski_data.get('baslik')}* yarına ertelendi.\n🗓️ Yeni zaman: {utc_to_yerel(yeni).strftime('%d.%m.%Y %H:%M')}")
 
             elif cq_data.startswith("snooze_"):
                 doc_id = cq_data[len("snooze_"):]
@@ -1457,12 +1447,15 @@ def check_assignments():
 
     gonderilen_sayisi = 0
 
-    # Basitleştirilmiş bildirim modeli: belirli "şu kadar önce" tetikleri yerine tek bir
-    # "kaç saatte bir" aralığı ve "hangi günler" filtresi kullanılır (Ayarlar panelinden).
-    ayarlar = bildirim_ayarlarini_al()
-    yerel_simdi = now + timedelta(hours=LOCAL_TZ_OFFSET_HOURS)
-    gun_aktif = yerel_simdi.weekday() in ayarlar["aktif_gunler"]
-    aralik_dk = max(5, int(ayarlar["saat_araligi"] * 60))
+    # Bildirim modeli: teslime birkaç gün varsa günde GUNDE_KAC_BILDIRIM defa, teslim günü (yerel)
+    # ODEV_GUNU_ARALIK_SAAT saatte bir. 01:00-07:00 arası (yerel) hiç bildirim gönderilmez.
+    if sessiz_saatte_mi(now):
+        eski_kayitlari_temizle()
+        try:
+            gunluk_ozet_kontrol_et()
+        except Exception as e:
+            print(f"Günlük özet hatası: {e}")
+        return jsonify({"status": "ok", "gonderilen_bildirim": 0, "not": "sessiz saatler (01:00-07:00)"})
 
     for d in docs:
         data = d.to_dict()
@@ -1479,12 +1472,8 @@ def check_assignments():
         except ValueError:
             continue
 
-        if not gun_aktif:
-            continue  # bugün aktif bildirim günlerinden değil
-
         kalan_dk = (teslim_dt - now).total_seconds() / 60
-        if kalan_dk > HATIRLATMA_BASLANGIC_DK:
-            continue  # teslime henüz çok var, hatırlatmalar başlamadı
+        aralik_dk = bildirim_araligi_dk(teslim_dt, now)
 
         son = data.get("son_hatirlatma")
         gonder = False

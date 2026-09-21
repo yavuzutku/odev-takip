@@ -502,9 +502,6 @@
         <button class="icon-btn" id="focusBtn" aria-label="Odak modu" title="Odak modu">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/></svg>
         </button>
-        <button class="icon-btn" id="settingsBtn" aria-label="Bildirim ayarları" title="Bildirim ayarları">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.6"/></svg>
-        </button>
         <button class="btn btn-ghost install-btn" id="installBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Yükle
@@ -751,28 +748,6 @@
     </div>
   </div>
 
-  <div class="quickadd-overlay" id="settingsOverlay">
-    <div class="quickadd-box" style="max-width:360px;">
-      <div class="field" style="margin-bottom:14px;">
-        <label>Kaç saatte bir hatırlatma gönderilsin?</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input type="number" id="fSaatAraligi" min="1" max="24" style="width:80px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:14px;">
-          <span style="font-size:12.5px;color:var(--text-dim);">saatte bir (teslime son 24 saat kala başlar)</span>
-        </div>
-      </div>
-      <div class="field" style="margin-bottom:6px;">
-        <label>Hangi günler bildirim gönderilsin?</label>
-        <div class="chip-row" id="settingsDayChips"></div>
-      </div>
-      <div class="quickadd-hint" style="margin-top:10px;">
-        <span>Tüm ödevler için geçerli genel ayar.</span>
-        <div class="quickadd-actions">
-          <button class="btn btn-ghost" id="settingsCancel" type="button" style="padding:7px 12px;font-size:12.5px;">Kapat</button>
-          <button class="btn btn-accent" id="settingsSave" type="button" style="padding:7px 14px;font-size:12.5px;">Kaydet</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div class="focus-overlay" id="focusOverlay">
     <button class="icon-btn focus-close" id="focusCloseBtn" aria-label="Kapat">
@@ -2208,56 +2183,6 @@ function closeFocusOverlay(){
 document.getElementById("focusBtn").addEventListener("click", openFocusOverlay);
 document.getElementById("focusCloseBtn").addEventListener("click", closeFocusOverlay);
 
-// --- Bildirim ayarları (genel): kaç saatte bir + hangi günler ---
-const GUN_KISA = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
-let secilenGunler = new Set([0,1,2,3,4,5,6]);
-const settingsOverlayEl = document.getElementById("settingsOverlay");
-const settingsDayChipsEl = document.getElementById("settingsDayChips");
-
-function renderSettingsDayChips(){
-  settingsDayChipsEl.innerHTML = GUN_KISA.map((g,i) =>
-    '<span class="chip'+(secilenGunler.has(i)?" active":"")+'" data-gun="'+i+'">'+g+'</span>'
-  ).join("");
-  settingsDayChipsEl.querySelectorAll("[data-gun]").forEach(el => {
-    el.addEventListener("click", () => {
-      const i = parseInt(el.dataset.gun, 10);
-      if (secilenGunler.has(i)) secilenGunler.delete(i); else secilenGunler.add(i);
-      renderSettingsDayChips();
-    });
-  });
-}
-
-async function openSettingsOverlay(){
-  try{
-    const snap = await getDoc(doc(db, "ayarlar", "bildirim"));
-    const veri = snap.exists() ? snap.data() : {};
-    document.getElementById("fSaatAraligi").value = veri.saat_araligi || 4;
-    secilenGunler = new Set(Array.isArray(veri.aktif_gunler) && veri.aktif_gunler.length ? veri.aktif_gunler : [0,1,2,3,4,5,6]);
-  }catch(e){
-    document.getElementById("fSaatAraligi").value = 4;
-    secilenGunler = new Set([0,1,2,3,4,5,6]);
-  }
-  renderSettingsDayChips();
-  settingsOverlayEl.classList.add("open");
-}
-function closeSettingsOverlay(){ settingsOverlayEl.classList.remove("open"); }
-
-document.getElementById("settingsBtn").addEventListener("click", openSettingsOverlay);
-document.getElementById("settingsCancel").addEventListener("click", closeSettingsOverlay);
-document.getElementById("settingsSave").addEventListener("click", async () => {
-  const saat = Math.max(1, Math.min(24, parseInt(document.getElementById("fSaatAraligi").value, 10) || 4));
-  if (!secilenGunler.size){ toast("En az bir gün seç"); return; }
-  try{
-    await setDoc(doc(db, "ayarlar", "bildirim"), {
-      saat_araligi: saat,
-      aktif_gunler: Array.from(secilenGunler).sort()
-    });
-    toast("Bildirim ayarları kaydedildi ✓", true);
-    closeSettingsOverlay();
-  }catch(e){
-    toast("Kaydedilemedi: " + e.message);
-  }
-});
 document.getElementById("focusStartBtn").addEventListener("click", startFocusTimer);
 document.getElementById("focusPauseBtn").addEventListener("click", pauseFocusTimer);
 document.getElementById("focusResetBtn").addEventListener("click", resetFocusTimer);
