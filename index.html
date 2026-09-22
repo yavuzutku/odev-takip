@@ -603,6 +603,10 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         İstatistikler
       </button>
+      <button data-pane="checklist" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Checklist
+      </button>
     </div>
 
     <div class="stats-strip" id="statsStrip"></div>
@@ -696,6 +700,29 @@
         </div>
       </div>
     </div>
+
+    <div class="view-pane" id="paneChecklist" style="display:none;">
+      <div class="stats-grid">
+        <div class="panel-card">
+          <h3>✅ Bugün yapılacaklar</h3>
+          <div class="sub-list" id="checklistGunList"></div>
+          <div class="sub-add">
+            <input type="text" id="checklistGunInput" placeholder="Örn: odayı topla, Enter'a bas" maxlength="140" autocomplete="off">
+            <button class="btn btn-ghost" id="checklistGunAddBtn" type="button" style="padding:7px 12px;font-size:12.5px;">Ekle</button>
+          </div>
+          <div class="field-hint"><span>Her gün gece yarısı otomatik olarak sıfırlanır.</span></div>
+        </div>
+        <div class="panel-card">
+          <h3>🗓️ Bu hafta yapılacaklar</h3>
+          <div class="sub-list" id="checklistHaftaList"></div>
+          <div class="sub-add">
+            <input type="text" id="checklistHaftaInput" placeholder="Örn: çamaşırları yıka, Enter'a bas" maxlength="140" autocomplete="off">
+            <button class="btn btn-ghost" id="checklistHaftaAddBtn" type="button" style="padding:7px 12px;font-size:12.5px;">Ekle</button>
+          </div>
+          <div class="field-hint"><span>Her hafta pazartesi otomatik olarak sıfırlanır. Hafta sonu tamamlanmazsa Telegram'dan hatırlatılır.</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <button class="ai-fab" id="aiFab" type="button" aria-label="Asistan" title="Asistan">✨</button>
@@ -732,6 +759,10 @@
     <button data-pane="istatistik" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M12 20V4M20 20v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       İstatistik
+    </button>
+    <button data-pane="checklist" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Checklist
     </button>
   </div>
 
@@ -890,6 +921,7 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 const odevlerRef = collection(db, "odevler");
+const checklistRef = collection(db, "checklist");
 
 // Sunucudaki APP_API_TOKEN / WEBHOOK_VERIFY_TOKEN ile aynı olmalı.
 // Ortam değişkenlerinden birini özelleştirdiysen burayı da güncelle.
@@ -3307,15 +3339,106 @@ duplicateBtn.addEventListener("click", async () => {
 renderCalendar();
 renderPriorityChips();
 
+// ---- Checklist (günlük / haftalık basit işler) ----
+// Bir maddenin "bu dönem tamamlandı" sayılması için son_tamamlanma alanı, o dönemin
+// anahtarına (gün ya da hafta) eşit olmalı. Dönem değişince (gece yarısı / pazartesi)
+// anahtar da değiştiğinden madde otomatik olarak "tamamlanmamış" görünür — ayrıca bir
+// sıfırlama işlemine gerek yok. Sunucu tarafı (main.py) aynı anahtarlarla hatırlatma gönderir.
+let checklistItems = [];
+
+function gunAnahtari(d){
+  const yy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+  return `${yy}-${mm}-${dd}`;
+}
+function haftaAnahtari(d){
+  // ISO hafta numarası main.py'deki isocalendar() ile aynı mantık.
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const gunNo = (t.getUTCDay() + 6) % 7; // Pazartesi=0
+  t.setUTCDate(t.getUTCDate() - gunNo + 3);
+  const yilBasi = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+  const haftaNo = 1 + Math.round(((t - yilBasi) / 86400000 - 3 + ((yilBasi.getUTCDay() + 6) % 7)) / 7);
+  return `${t.getUTCFullYear()}-W${String(haftaNo).padStart(2,"0")}`;
+}
+
+onSnapshot(checklistRef, (snap) => {
+  checklistItems = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+  renderChecklist();
+});
+
+function checklistRowHtml(item, tamamlandi){
+  return '<div class="sub-row'+(tamamlandi?" done":"")+'" data-checklist-id="'+item.id+'">' +
+    '<input type="checkbox" data-checklist-toggle="'+item.id+'"'+(tamamlandi?" checked":"")+'>' +
+    '<span class="sub-text">'+escapeHtml(item.metin||"")+'</span>' +
+    '<button class="sub-x" type="button" data-checklist-del="'+item.id+'" aria-label="Maddeyi sil">×</button>' +
+  '</div>';
+}
+
+function renderChecklist(){
+  const gunListEl = document.getElementById("checklistGunList");
+  const haftaListEl = document.getElementById("checklistHaftaList");
+  if (!gunListEl || !haftaListEl) return;
+
+  const now = new Date();
+  const gunKey = gunAnahtari(now);
+  const haftaKey = haftaAnahtari(now);
+
+  const gunler = checklistItems.filter(x => (x.periyot || "gun") === "gun");
+  const haftalar = checklistItems.filter(x => x.periyot === "hafta");
+
+  gunListEl.innerHTML = gunler.length
+    ? gunler.map(x => checklistRowHtml(x, x.son_tamamlanma === gunKey)).join("")
+    : '<div style="color:var(--text-faint);font-size:12.5px;padding:6px 2px;">Henüz madde yok. Aşağıdan ekleyebilirsin.</div>';
+  haftaListEl.innerHTML = haftalar.length
+    ? haftalar.map(x => checklistRowHtml(x, x.son_tamamlanma === haftaKey)).join("")
+    : '<div style="color:var(--text-faint);font-size:12.5px;padding:6px 2px;">Henüz madde yok. Aşağıdan ekleyebilirsin.</div>';
+
+  document.querySelectorAll("[data-checklist-toggle]").forEach(el => {
+    el.addEventListener("change", async () => {
+      const id = el.getAttribute("data-checklist-toggle");
+      const item = checklistItems.find(x => x.id === id);
+      if (!item) return;
+      const donemAnahtari = (item.periyot === "hafta") ? haftaAnahtari(new Date()) : gunAnahtari(new Date());
+      await updateDoc(doc(db, "checklist", id), {
+        son_tamamlanma: el.checked ? donemAnahtari : null,
+      });
+    });
+  });
+  document.querySelectorAll("[data-checklist-del]").forEach(el => {
+    el.addEventListener("click", async () => {
+      const id = el.getAttribute("data-checklist-del");
+      await deleteDoc(doc(db, "checklist", id));
+    });
+  });
+}
+
+async function checklistEkle(periyot, inputEl){
+  const metin = inputEl.value.trim();
+  if (!metin) return;
+  await addDoc(checklistRef, {
+    metin, periyot, son_tamamlanma: null, son_hatirlatma: null,
+    bildirim_kapali: false, olusturulma: new Date().toISOString(),
+  });
+  inputEl.value = "";
+  inputEl.focus();
+}
+const checklistGunInput = document.getElementById("checklistGunInput");
+const checklistHaftaInput = document.getElementById("checklistHaftaInput");
+document.getElementById("checklistGunAddBtn").addEventListener("click", () => checklistEkle("gun", checklistGunInput));
+document.getElementById("checklistHaftaAddBtn").addEventListener("click", () => checklistEkle("hafta", checklistHaftaInput));
+checklistGunInput.addEventListener("keydown", (e) => { if (e.key === "Enter"){ e.preventDefault(); checklistEkle("gun", checklistGunInput); } });
+checklistHaftaInput.addEventListener("keydown", (e) => { if (e.key === "Enter"){ e.preventDefault(); checklistEkle("hafta", checklistHaftaInput); } });
+
 // ---- Pane switching (Takvim / İstatistikler) ----
 function switchPane(pane){
   document.getElementById("paneTakvim").style.display = pane === "takvim" ? "" : "none";
   document.getElementById("paneIstatistik").style.display = pane === "istatistik" ? "" : "none";
-  document.getElementById("statsStrip").style.display = pane === "istatistik" ? "none" : "flex";
+  document.getElementById("paneChecklist").style.display = pane === "checklist" ? "" : "none";
+  document.getElementById("statsStrip").style.display = pane === "takvim" ? "flex" : "none";
   document.querySelectorAll("#appNav button, #mobileNav button").forEach(b => {
     b.classList.toggle("active", b.getAttribute("data-pane") === pane);
   });
   if (pane === "istatistik") renderStatsPage();
+  if (pane === "checklist") renderChecklist();
 }
 document.querySelectorAll("#appNav button, #mobileNav button").forEach(b => {
   b.addEventListener("click", () => switchPane(b.getAttribute("data-pane")));

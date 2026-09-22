@@ -98,6 +98,26 @@ def send_telegram_interactive(message_text, doc_id):
     return res
 
 
+def send_telegram_interactive_checklist(message_text, doc_id):
+    """Checklist öğesi için tek butonlu (Tamamlandı) mesaj gönderir."""
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message_text,
+        "parse_mode": "Markdown",
+        "reply_markup": {
+            "inline_keyboard": [[
+                {"text": "✅ Tamamlandı", "callback_data": f"clkdone_{doc_id}"},
+            ]]
+        },
+    }
+    res = requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
+    if res.status_code != 200:
+        print(f"Checklist gönderim hatası: {res.status_code} {res.text}")
+        return send_telegram(message_text)
+    mesaj_kaydet("giden", message_text)
+    return res
+
+
 def send_snooze_options(doc_id):
     payload = {
         "chat_id": CHAT_ID,
@@ -152,6 +172,95 @@ BILDIRIM_KADEMELERI = [
 ]
 BILDIRIM_UZAK_ARALIK_DK = 720   # 3 günden fazla varsa -> 12 saatte bir (günde 2)
 BILDIRIM_GECIKME_ARALIK_DK = 60  # süre geçmiş, tamamlanmamış -> saatte bir
+
+# ---- Checklist (günlük / haftalık basit işler) bildirim ayarları ----
+# Günlük işler: yerel saat bu saatten sonra, o gün için henüz işaretlenmemişse hatırlatılır.
+CHECKLIST_GUN_BASLANGIC_SAAT = 19
+CHECKLIST_GUN_ARALIK_DK = 120     # günlük madde hatırlatma aralığı
+# Haftalık işler: hafta sonuna yaklaşırken (Cumartesi öğleden sonra + Pazar) hatırlatılır.
+CHECKLIST_HAFTA_BASLANGIC_GUN = 5   # 0=Pazartesi ... 5=Cumartesi, 6=Pazar
+CHECKLIST_HAFTA_CMT_BASLANGIC_SAAT = 18
+CHECKLIST_HAFTA_ARALIK_DK = 240    # haftalık madde hatırlatma aralığı
+
+
+def gun_anahtari(yerel_dt):
+    """Bir günü tekil biçimde tanımlayan anahtar, örn. '2026-09-22'."""
+    return yerel_dt.strftime("%Y-%m-%d")
+
+
+def hafta_anahtari(yerel_dt):
+    """Bir haftayı (ISO) tekil biçimde tanımlayan anahtar, örn. '2026-W38'."""
+    iso_yil, iso_hafta, _ = yerel_dt.isocalendar()
+    return f"{iso_yil}-W{iso_hafta:02d}"
+
+
+def checklist_kontrol_et(now):
+    """Tamamlanmamış günlük/haftalık checklist maddeleri için Telegram hatırlatması gönderir.
+    Bir maddenin 'bu dönem tamamlandı' sayılması için son_tamamlanma alanı,
+    o dönemin anahtarına (gün ya da hafta) eşit olmalıdır; dönem değişince otomatik olarak
+    yeniden 'tamamlanmamış' görünür, ayrıca bir sıfırlama işlemine gerek kalmaz."""
+    yerel = utc_to_yerel(now)
+    gun_key = gun_anahtari(yerel)
+    hafta_key = hafta_anahtari(yerel)
+    gonderilen = 0
+
+    try:
+        docs = list(db.collection("checklist").stream())
+    except Exception as e:
+        print(f"Checklist okuma hatası: {e}")
+        return 0
+
+    for d in docs:
+        v = d.to_dict()
+        if v.get("bildirim_kapali"):
+            continue
+
+        periyot = v.get("periyot") if v.get("periyot") in ("gun", "hafta") else "gun"
+        donem_anahtari = gun_key if periyot == "gun" else hafta_key
+        if v.get("son_tamamlanma") == donem_anahtari:
+            continue  # bu dönem için zaten tamamlanmış
+
+        if periyot == "gun":
+            if yerel.hour < CHECKLIST_GUN_BASLANGIC_SAAT:
+                continue
+            aralik_dk = CHECKLIST_GUN_ARALIK_DK
+            etiket = "📅 Bugün için"
+        else:
+            gun_no = yerel.weekday()
+            if gun_no < CHECKLIST_HAFTA_BASLANGIC_GUN:
+                continue
+            if gun_no == CHECKLIST_HAFTA_BASLANGIC_GUN and yerel.hour < CHECKLIST_HAFTA_CMT_BASLANGIC_SAAT:
+                continue
+            aralik_dk = CHECKLIST_HAFTA_ARALIK_DK
+            etiket = "🗓️ Bu hafta için"
+
+        son = v.get("son_hatirlatma")
+        gonder = True
+        if son:
+            try:
+                son_dt = datetime.strptime(son, ZAMAN_FORMAT_SANIYE)
+                if now - son_dt < timedelta(minutes=aralik_dk):
+                    gonder = False
+            except ValueError:
+                pass
+
+        if gonder:
+            metin = (
+                "☑️ *Checklist Hatırlatma*\n\n"
+                f"{etiket} henüz işaretlenmemiş:\n"
+                f"📌 {v.get('metin')}\n\n"
+                "Tamamladıysan aşağıya bas 👇"
+            )
+            res = send_telegram_interactive_checklist(metin, d.id)
+            if res.status_code == 200:
+                db.collection("checklist").document(d.id).update(
+                    {"son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
+                )
+                gonderilen += 1
+            else:
+                print(f"Checklist gönderim hatası ({d.id}): {res.status_code} {res.text}")
+
+    return gonderilen
 
 
 def bildirim_araligi_dk(teslim_dt, now):
@@ -1281,6 +1390,20 @@ def webhook_receive():
                 answer_callback_query(cq["id"])
                 send_snooze_options(doc_id)
 
+            elif cq_data.startswith("clkdone_"):
+                doc_id = cq_data[len("clkdone_"):]
+                yerel = yerel_simdi()
+                ref = db.collection("checklist").document(doc_id)
+                snap = ref.get()
+                if snap.exists:
+                    periyot = snap.to_dict().get("periyot") if snap.to_dict().get("periyot") in ("gun", "hafta") else "gun"
+                    donem_anahtari = gun_anahtari(yerel) if periyot == "gun" else hafta_anahtari(yerel)
+                    ref.update({"son_tamamlanma": donem_anahtari})
+                    answer_callback_query(cq["id"], "Tamamlandı olarak işaretlendi ✅")
+                    send_telegram("✅ Checklist maddesi tamamlandı olarak işaretlendi.")
+                else:
+                    answer_callback_query(cq["id"], "Madde bulunamadı")
+
         elif "message" in data:
             text = data["message"].get("text", "").strip().lower()
             text = text.replace("ü", "u").replace("ğ", "g").replace("ı", "i")
@@ -1528,7 +1651,17 @@ def check_assignments():
     except Exception as e:
         print(f"Günlük özet hatası: {e}")
 
-    return jsonify({"status": "ok", "gonderilen_bildirim": gonderilen_sayisi})
+    try:
+        checklist_gonderilen = checklist_kontrol_et(now)
+    except Exception as e:
+        print(f"Checklist hatırlatma hatası: {e}")
+        checklist_gonderilen = 0
+
+    return jsonify({
+        "status": "ok",
+        "gonderilen_bildirim": gonderilen_sayisi,
+        "gonderilen_checklist": checklist_gonderilen,
+    })
 
 
 if __name__ == "__main__":
