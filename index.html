@@ -1987,9 +1987,11 @@ function renderAgenda(){
   });
 }
 
+const VARSAYILAN_DERSLER = ["Edebiyat","İngilizce","Din","Coğrafya","Felsefe","Matematik","Business","ESS","Global Politics"];
+
 function updateDersListe(){
   const dl = document.getElementById("dersListe");
-  const dersSet = new Set(items.map(it => it.ders).filter(Boolean));
+  const dersSet = new Set([...VARSAYILAN_DERSLER, ...items.map(it => it.ders).filter(Boolean)]);
   dl.innerHTML = Array.from(dersSet).sort().map(d => '<option value="'+escapeHtml(d)+'"></option>').join("");
 }
 
