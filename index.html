@@ -546,54 +546,6 @@
     .ai-fab{right:auto;left:16px;bottom:74px;}
     .ai-panel{left:12px;right:12px;width:auto;bottom:130px;max-height:calc(100vh - 190px);}
   }
-/* ---- Notlarım (ders bazlı not editörü) ---- */
-.notes-layout{display:flex;gap:16px;align-items:flex-start;}
-.notes-sidebar{width:260px;flex:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;max-height:calc(100vh - 220px);overflow-y:auto;position:sticky;top:12px;}
-.notes-sidebar-head{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;padding:4px 6px 8px;}
-.notes-sidebar-head button{background:none;border:1px solid var(--border);color:var(--text-dim);width:22px;height:22px;border-radius:6px;cursor:pointer;font-size:14px;line-height:1;}
-.notes-sidebar-head button:hover{background:var(--bg-soft);color:var(--text);}
-.notes-tree-ders{margin-bottom:2px;}
-.notes-tree-row{display:flex;align-items:center;gap:6px;padding:6px 6px;border-radius:6px;cursor:pointer;font-size:13.5px;color:var(--text);}
-.notes-tree-row:hover{background:var(--bg-soft);}
-.notes-tree-row.active{background:var(--accent);color:var(--accent-ink);font-weight:600;}
-.notes-tree-row .notes-caret{width:14px;flex:none;transition:transform .15s;color:var(--text-faint);font-size:10px;}
-.notes-tree-row.open .notes-caret{transform:rotate(90deg);}
-.notes-tree-row .notes-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.notes-tree-row .notes-row-actions{display:none;gap:2px;flex:none;}
-.notes-tree-row:hover .notes-row-actions{display:flex;}
-.notes-tree-row .notes-row-actions button{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:11.5px;padding:2px 4px;border-radius:4px;}
-.notes-tree-row .notes-row-actions button:hover{background:var(--border-soft);color:var(--text);}
-.notes-tree-topics{margin-left:16px;display:none;}
-.notes-tree-topics.open{display:block;}
-.notes-tree-docs{margin-left:16px;display:none;}
-.notes-tree-docs.open{display:block;}
-.notes-tree-doc-row{padding:5px 6px 5px 22px;}
-.notes-tree-add-child{font-size:11.5px;color:var(--accent);cursor:pointer;padding:4px 6px 4px 22px;}
-.notes-tree-add-child:hover{text-decoration:underline;}
-.notes-editor-wrap{flex:1;min-width:0;}
-.notes-editor-empty{color:var(--text-faint);text-align:center;padding:80px 20px;font-size:14px;}
-.notes-editor{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.notes-doc-title{width:100%;border:none;background:transparent;font-family:var(--serif);font-size:23px;font-weight:600;color:var(--text);padding:18px 24px 6px;outline:none;}
-.notes-toolbar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--border-soft);position:sticky;top:0;background:var(--surface);z-index:2;}
-.notes-toolbar button{background:none;border:1px solid transparent;color:var(--text-dim);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px;}
-.notes-toolbar button:hover{background:var(--bg-soft);color:var(--text);}
-.notes-toolbar button.active{background:var(--accent);color:var(--accent-ink);}
-.notes-toolbar select{background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:12.5px;padding:4px 6px;}
-.notes-toolbar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;}
-.notes-color-lbl{position:relative;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;cursor:pointer;color:var(--text-dim);font-size:13px;}
-.notes-color-lbl:hover{background:var(--bg-soft);}
-.notes-color-lbl input[type="color"]{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.notes-save-status{margin-left:auto;font-size:11px;color:var(--text-faint);}
-.notes-doc-body{min-height:60vh;padding:12px 24px 60px;font-family:var(--serif);font-size:15.5px;line-height:1.7;color:var(--text);outline:none;}
-.notes-doc-body h1{font-size:26px;margin:.6em 0 .3em;}
-.notes-doc-body h2{font-size:21px;margin:.6em 0 .3em;}
-.notes-doc-body h3{font-size:17px;margin:.6em 0 .3em;}
-.notes-doc-body ul,.notes-doc-body ol{padding-left:24px;margin:.4em 0;}
-.notes-doc-body:empty:before{content:attr(data-placeholder);color:var(--text-faint);}
-@media (max-width:900px){
-  .notes-layout{flex-direction:column;}
-  .notes-sidebar{width:100%;position:static;max-height:220px;}
-}
 </style>
 </head>
 <body>
@@ -654,10 +606,6 @@
       <button data-pane="checklist" type="button">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Checklist
-      </button>
-      <button data-pane="notlar" type="button">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3v5h5M8 12h8M8 16h8M8 8h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Notlarım
       </button>
     </div>
 
@@ -775,46 +723,6 @@
         </div>
       </div>
     </div>
-
-    <div class="view-pane" id="paneNotlar" style="display:none;">
-      <div class="notes-layout">
-        <aside class="notes-sidebar">
-          <div class="notes-sidebar-head">
-            <span>Derslerim</span>
-            <button type="button" id="notesAddDersBtn" title="Yeni ders ekle">+</button>
-          </div>
-          <div id="notesTree"></div>
-        </aside>
-        <section class="notes-editor-wrap">
-          <div class="notes-editor-empty" id="notesEmptyState">Soldan bir doküman seç, ya da + ile yeni bir ders/konu/doküman oluştur.</div>
-          <div class="notes-editor" id="notesEditorArea" style="display:none;">
-            <input type="text" id="notesDocTitle" class="notes-doc-title" placeholder="Başlıksız doküman" autocomplete="off">
-            <div class="notes-toolbar" id="notesToolbar">
-              <button type="button" data-cmd="bold" title="Kalın (Ctrl+B)"><b>K</b></button>
-              <button type="button" data-cmd="italic" title="İtalik (Ctrl+I)"><i>İ</i></button>
-              <button type="button" data-cmd="underline" title="Altı çizili (Ctrl+U)"><u>A</u></button>
-              <button type="button" data-cmd="strikeThrough" title="Üstü çizili"><s>S</s></button>
-              <span class="notes-toolbar-sep"></span>
-              <select id="notesBlockSelect" title="Paragraf stili">
-                <option value="P">Normal metin</option>
-                <option value="H1">Başlık 1</option>
-                <option value="H2">Başlık 2</option>
-                <option value="H3">Başlık 3</option>
-              </select>
-              <span class="notes-toolbar-sep"></span>
-              <button type="button" data-cmd="insertUnorderedList" title="Madde işaretli liste">•≡</button>
-              <button type="button" data-cmd="insertOrderedList" title="Numaralı liste">1≡</button>
-              <span class="notes-toolbar-sep"></span>
-              <label class="notes-color-lbl" title="Yazı rengi">A<input type="color" id="notesTextColor" value="#e8eaed"></label>
-              <label class="notes-color-lbl" title="Vurgu (fosforlu) rengi">🖍<input type="color" id="notesHiliteColor" value="#fff176"></label>
-              <button type="button" id="notesClearFormatBtn" title="Biçimlendirmeyi temizle">Tx</button>
-              <span class="notes-save-status" id="notesSaveStatus"></span>
-            </div>
-            <div class="notes-doc-body" id="notesDocBody" contenteditable="true" data-placeholder="Yazmaya başla…"></div>
-          </div>
-        </section>
-      </div>
-    </div>
   </div>
 
   <button class="ai-fab" id="aiFab" type="button" aria-label="Asistan" title="Asistan">✨</button>
@@ -855,10 +763,6 @@
     <button data-pane="checklist" type="button">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Checklist
-    </button>
-    <button data-pane="notlar" type="button">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3v5h5M8 12h8M8 16h8M8 8h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Notlarım
     </button>
   </div>
 
@@ -1018,7 +922,6 @@ const fbApp = initializeApp(firebaseConfig);
 const db = getFirestore(fbApp);
 const odevlerRef = collection(db, "odevler");
 const checklistRef = collection(db, "checklist");
-const notlarRef = collection(db, "notlar");
 
 // Sunucudaki APP_API_TOKEN / WEBHOOK_VERIFY_TOKEN ile aynı olmalı.
 // Ortam değişkenlerinden birini özelleştirdiysen burayı da güncelle.
@@ -3525,264 +3428,17 @@ document.getElementById("checklistHaftaAddBtn").addEventListener("click", () => 
 checklistGunInput.addEventListener("keydown", (e) => { if (e.key === "Enter"){ e.preventDefault(); checklistEkle("gun", checklistGunInput); } });
 checklistHaftaInput.addEventListener("keydown", (e) => { if (e.key === "Enter"){ e.preventDefault(); checklistEkle("hafta", checklistHaftaInput); } });
 
-// ---- Notlarım (ders > topic > doküman, Google Docs benzeri editör) ----
-let notlarCache = [];
-let notesTreeState = {};      // "Ders" veya "Ders||Topic" -> açık/kapalı
-let notesCurrentDocId = null;
-let notesSaveTimer = null;
-let notesSuppressDirty = false;
-
-onSnapshot(notlarRef, (snap) => {
-  notlarCache = snap.docs.map(d => Object.assign({id: d.id}, d.data()));
-  renderNotesTree();
-});
-
-function notesGroup(){
-  const dersMap = new Map();
-  notlarCache.forEach(n => {
-    const ders = (n.ders || "Genel").trim() || "Genel";
-    const topic = (n.topic || "Genel").trim() || "Genel";
-    if (!dersMap.has(ders)) dersMap.set(ders, new Map());
-    const topicMap = dersMap.get(ders);
-    if (!topicMap.has(topic)) topicMap.set(topic, []);
-    topicMap.get(topic).push(n);
-  });
-  dersMap.forEach(topicMap => {
-    topicMap.forEach(docs => docs.sort((a,b) => (a.sira||0)-(b.sira||0) || (a.baslik||"").localeCompare(b.baslik||"", "tr")));
-  });
-  return dersMap;
-}
-
-function renderNotesTree(){
-  const wrap = document.getElementById("notesTree");
-  if (!wrap) return;
-  const dersMap = notesGroup();
-  wrap.innerHTML = "";
-  if (dersMap.size === 0){
-    wrap.innerHTML = '<div class="empty-note" style="padding:10px 6px;">Henüz ders yok. Üstteki + ile başla.</div>';
-    return;
-  }
-  Array.from(dersMap.keys()).sort((a,b)=>a.localeCompare(b,"tr")).forEach(ders => {
-    const dersOpen = !!notesTreeState[ders];
-    const dersEl = document.createElement("div");
-    dersEl.className = "notes-tree-ders";
-    const row = document.createElement("div");
-    row.className = "notes-tree-row" + (dersOpen ? " open" : "");
-    row.innerHTML =
-      '<span class="notes-caret">▶</span><span class="notes-label">' + escapeHtml(ders) + '</span>' +
-      '<span class="notes-row-actions">' +
-        '<button type="button" data-act="add-topic" title="Konu ekle">+</button>' +
-        '<button type="button" data-act="rename-ders" title="Yeniden adlandır">✎</button>' +
-        '<button type="button" data-act="del-ders" title="Dersi sil">🗑</button>' +
-      '</span>';
-    row.addEventListener("click", (e) => {
-      if (e.target.closest("[data-act]")) return;
-      notesTreeState[ders] = !notesTreeState[ders];
-      renderNotesTree();
-    });
-    row.querySelector('[data-act="add-topic"]').addEventListener("click", (e) => { e.stopPropagation(); notesAddTopic(ders); });
-    row.querySelector('[data-act="rename-ders"]').addEventListener("click", (e) => { e.stopPropagation(); notesRenameDers(ders); });
-    row.querySelector('[data-act="del-ders"]').addEventListener("click", (e) => { e.stopPropagation(); notesDeleteDers(ders); });
-    dersEl.appendChild(row);
-
-    const topicsWrap = document.createElement("div");
-    topicsWrap.className = "notes-tree-topics" + (dersOpen ? " open" : "");
-    const topicMap = dersMap.get(ders);
-    Array.from(topicMap.keys()).sort((a,b)=>a.localeCompare(b,"tr")).forEach(topic => {
-      const topicKey = ders + "||" + topic;
-      const topicOpen = !!notesTreeState[topicKey];
-      const tRow = document.createElement("div");
-      tRow.className = "notes-tree-row" + (topicOpen ? " open" : "");
-      tRow.innerHTML =
-        '<span class="notes-caret">▶</span><span class="notes-label">' + escapeHtml(topic) + '</span>' +
-        '<span class="notes-row-actions">' +
-          '<button type="button" data-act="add-doc" title="Doküman ekle">+</button>' +
-          '<button type="button" data-act="rename-topic" title="Yeniden adlandır">✎</button>' +
-          '<button type="button" data-act="del-topic" title="Konuyu sil">🗑</button>' +
-        '</span>';
-      tRow.addEventListener("click", (e) => {
-        if (e.target.closest("[data-act]")) return;
-        notesTreeState[topicKey] = !notesTreeState[topicKey];
-        renderNotesTree();
-      });
-      tRow.querySelector('[data-act="add-doc"]').addEventListener("click", (e) => { e.stopPropagation(); notesAddDoc(ders, topic); });
-      tRow.querySelector('[data-act="rename-topic"]').addEventListener("click", (e) => { e.stopPropagation(); notesRenameTopic(ders, topic); });
-      tRow.querySelector('[data-act="del-topic"]').addEventListener("click", (e) => { e.stopPropagation(); notesDeleteTopic(ders, topic); });
-      topicsWrap.appendChild(tRow);
-
-      const docsWrap = document.createElement("div");
-      docsWrap.className = "notes-tree-docs" + (topicOpen ? " open" : "");
-      topicMap.get(topic).forEach(docItem => {
-        const dRow = document.createElement("div");
-        dRow.className = "notes-tree-row notes-tree-doc-row" + (docItem.id === notesCurrentDocId ? " active" : "");
-        dRow.innerHTML = '<span class="notes-label">' + escapeHtml(docItem.baslik || "Başlıksız") + '</span>' +
-          '<span class="notes-row-actions"><button type="button" data-act="del-doc" title="Sil">🗑</button></span>';
-        dRow.addEventListener("click", (e) => { if (!e.target.closest("[data-act]")) notesOpenDoc(docItem.id); });
-        dRow.querySelector('[data-act="del-doc"]').addEventListener("click", (e) => { e.stopPropagation(); notesDeleteDoc(docItem.id); });
-        docsWrap.appendChild(dRow);
-      });
-      const addDocLink = document.createElement("div");
-      addDocLink.className = "notes-tree-add-child";
-      addDocLink.textContent = "+ Doküman ekle";
-      addDocLink.addEventListener("click", () => notesAddDoc(ders, topic));
-      docsWrap.appendChild(addDocLink);
-      topicsWrap.appendChild(docsWrap);
-    });
-    const addTopicLink = document.createElement("div");
-    addTopicLink.className = "notes-tree-add-child";
-    addTopicLink.textContent = "+ Konu ekle";
-    addTopicLink.addEventListener("click", () => notesAddTopic(ders));
-    topicsWrap.appendChild(addTopicLink);
-
-    dersEl.appendChild(topicsWrap);
-    wrap.appendChild(dersEl);
-  });
-}
-
-async function notesAddDers(){
-  const ad = prompt("Yeni ders adı (örn: ESS):");
-  if (!ad || !ad.trim()) return;
-  notesTreeState[ad.trim()] = true;
-  await notesAddTopic(ad.trim());
-}
-async function notesAddTopic(ders){
-  const ad = prompt("Yeni topic/konu adı (örn: Topic 1):");
-  if (!ad || !ad.trim()) return;
-  notesTreeState[ders] = true;
-  notesTreeState[ders + "||" + ad.trim()] = true;
-  await notesAddDoc(ders, ad.trim());
-}
-async function notesAddDoc(ders, topic){
-  const baslik = prompt("Doküman adı (örn: 1.1):", "1.1");
-  if (baslik === null) return;
-  const ref = await addDoc(notlarRef, {
-    ders, topic, baslik: baslik.trim() || "Başlıksız",
-    icerik: "", sira: Date.now(), guncelleme: new Date().toISOString()
-  });
-  notesTreeState[ders] = true;
-  notesTreeState[ders + "||" + topic] = true;
-  notesOpenDoc(ref.id);
-}
-function notesRenameDers(eski){
-  const yeni = prompt("Yeni ders adı:", eski);
-  if (!yeni || !yeni.trim() || yeni.trim() === eski) return;
-  notlarCache.filter(n => (n.ders||"Genel").trim()===eski)
-    .forEach(n => updateDoc(doc(db,"notlar",n.id), {ders: yeni.trim()}));
-}
-function notesRenameTopic(ders, eski){
-  const yeni = prompt("Yeni konu adı:", eski);
-  if (!yeni || !yeni.trim() || yeni.trim() === eski) return;
-  notlarCache.filter(n => (n.ders||"Genel").trim()===ders && (n.topic||"Genel").trim()===eski)
-    .forEach(n => updateDoc(doc(db,"notlar",n.id), {topic: yeni.trim()}));
-}
-function notesDeleteDers(ders){
-  const items = notlarCache.filter(n => (n.ders||"Genel").trim()===ders);
-  if (!confirm('"' + ders + '" dersini ve içindeki ' + items.length + ' dokümanı silmek istediğine emin misin?')) return;
-  items.forEach(n => { if (n.id===notesCurrentDocId) notesCloseEditor(); deleteDoc(doc(db,"notlar",n.id)); });
-}
-function notesDeleteTopic(ders, topic){
-  const items = notlarCache.filter(n => (n.ders||"Genel").trim()===ders && (n.topic||"Genel").trim()===topic);
-  if (!confirm('"' + topic + '" konusunu ve içindeki ' + items.length + ' dokümanı silmek istediğine emin misin?')) return;
-  items.forEach(n => { if (n.id===notesCurrentDocId) notesCloseEditor(); deleteDoc(doc(db,"notlar",n.id)); });
-}
-function notesDeleteDoc(id){
-  if (!confirm("Bu dokümanı silmek istediğine emin misin?")) return;
-  if (id === notesCurrentDocId) notesCloseEditor();
-  deleteDoc(doc(db,"notlar",id));
-}
-function notesCloseEditor(){
-  notesCurrentDocId = null;
-  document.getElementById("notesEmptyState").style.display = "";
-  document.getElementById("notesEditorArea").style.display = "none";
-}
-function notesOpenDoc(id){
-  const item = notlarCache.find(n => n.id === id);
-  if (!item) return;
-  notesSaveNow(); // önceki dokümanda bekleyen kayıt varsa önce onu bitir
-  notesCurrentDocId = id;
-  document.getElementById("notesEmptyState").style.display = "none";
-  document.getElementById("notesEditorArea").style.display = "";
-  notesSuppressDirty = true;
-  document.getElementById("notesDocTitle").value = item.baslik || "";
-  document.getElementById("notesDocBody").innerHTML = item.icerik || "";
-  notesSuppressDirty = false;
-  document.getElementById("notesSaveStatus").textContent = "";
-  renderNotesTree();
-}
-function notesScheduleSave(){
-  if (notesSuppressDirty || !notesCurrentDocId) return;
-  document.getElementById("notesSaveStatus").textContent = "yazılıyor…";
-  clearTimeout(notesSaveTimer);
-  notesSaveTimer = setTimeout(notesSaveNow, 700);
-}
-async function notesSaveNow(){
-  if (!notesCurrentDocId) return;
-  const id = notesCurrentDocId;
-  clearTimeout(notesSaveTimer);
-  const baslik = document.getElementById("notesDocTitle").value.trim() || "Başlıksız";
-  const icerik = document.getElementById("notesDocBody").innerHTML;
-  try{
-    await updateDoc(doc(db,"notlar",id), {baslik, icerik, guncelleme: new Date().toISOString()});
-    if (id === notesCurrentDocId) document.getElementById("notesSaveStatus").textContent = "kaydedildi ✓";
-  }catch(e){
-    document.getElementById("notesSaveStatus").textContent = "kaydedilemedi";
-  }
-}
-function notesUpdateToolbarState(){
-  document.querySelectorAll("#notesToolbar button[data-cmd]").forEach(btn => {
-    try{ btn.classList.toggle("active", document.queryCommandState(btn.getAttribute("data-cmd"))); }catch(e){}
-  });
-}
-document.getElementById("notesAddDersBtn").addEventListener("click", notesAddDers);
-document.getElementById("notesDocTitle").addEventListener("input", notesScheduleSave);
-document.getElementById("notesDocBody").addEventListener("input", notesScheduleSave);
-document.querySelectorAll("#notesToolbar button[data-cmd]").forEach(btn => {
-  btn.addEventListener("mousedown", (e) => e.preventDefault());
-  btn.addEventListener("click", () => {
-    document.execCommand(btn.getAttribute("data-cmd"), false, null);
-    document.getElementById("notesDocBody").focus();
-    notesScheduleSave();
-    notesUpdateToolbarState();
-  });
-});
-document.getElementById("notesBlockSelect").addEventListener("change", (e) => {
-  document.execCommand("formatBlock", false, e.target.value);
-  document.getElementById("notesDocBody").focus();
-  notesScheduleSave();
-});
-document.getElementById("notesTextColor").addEventListener("input", (e) => {
-  document.execCommand("foreColor", false, e.target.value);
-  document.getElementById("notesDocBody").focus();
-  notesScheduleSave();
-});
-document.getElementById("notesHiliteColor").addEventListener("input", (e) => {
-  document.execCommand("hiliteColor", false, e.target.value);
-  document.getElementById("notesDocBody").focus();
-  notesScheduleSave();
-});
-document.getElementById("notesClearFormatBtn").addEventListener("click", () => {
-  document.execCommand("removeFormat", false, null);
-  document.execCommand("formatBlock", false, "P");
-  document.getElementById("notesDocBody").focus();
-  notesScheduleSave();
-});
-document.getElementById("notesDocBody").addEventListener("keyup", notesUpdateToolbarState);
-document.getElementById("notesDocBody").addEventListener("mouseup", notesUpdateToolbarState);
-window.addEventListener("beforeunload", () => { if (notesCurrentDocId) notesSaveNow(); });
-
-// ---- Pane switching (Takvim / İstatistikler / Checklist / Notlarım) ----
+// ---- Pane switching (Takvim / İstatistikler) ----
 function switchPane(pane){
   document.getElementById("paneTakvim").style.display = pane === "takvim" ? "" : "none";
   document.getElementById("paneIstatistik").style.display = pane === "istatistik" ? "" : "none";
   document.getElementById("paneChecklist").style.display = pane === "checklist" ? "" : "none";
-  document.getElementById("paneNotlar").style.display = pane === "notlar" ? "" : "none";
   document.getElementById("statsStrip").style.display = pane === "takvim" ? "flex" : "none";
   document.querySelectorAll("#appNav button, #mobileNav button").forEach(b => {
     b.classList.toggle("active", b.getAttribute("data-pane") === pane);
   });
   if (pane === "istatistik") renderStatsPage();
   if (pane === "checklist") renderChecklist();
-  if (pane === "notlar") renderNotesTree();
 }
 document.querySelectorAll("#appNav button, #mobileNav button").forEach(b => {
   b.addEventListener("click", () => switchPane(b.getAttribute("data-pane")));
