@@ -3642,26 +3642,49 @@ function renderNotesTree(){
 async function notesAddDers(){
   const ad = prompt("Yeni ders adı (örn: ESS):");
   if (!ad || !ad.trim()) return;
-  notesTreeState[ad.trim()] = true;
-  await notesAddTopic(ad.trim());
+  const ders = ad.trim();
+  try{
+    const ref = await addDoc(notlarRef, {
+      ders, topic: "Genel", baslik: "Başlıksız Doküman", icerik: "",
+      sira: Date.now(), guncelleme: new Date().toISOString()
+    });
+    notesTreeState[ders] = true;
+    notesTreeState[ders + "||Genel"] = true;
+    notesOpenDoc(ref.id);
+  }catch(e){
+    alert("Ders eklenemedi: " + (e && e.message ? e.message : e));
+  }
 }
 async function notesAddTopic(ders){
   const ad = prompt("Yeni topic/konu adı (örn: Topic 1):");
   if (!ad || !ad.trim()) return;
-  notesTreeState[ders] = true;
-  notesTreeState[ders + "||" + ad.trim()] = true;
-  await notesAddDoc(ders, ad.trim());
+  const topic = ad.trim();
+  try{
+    const ref = await addDoc(notlarRef, {
+      ders, topic, baslik: "Başlıksız Doküman", icerik: "",
+      sira: Date.now(), guncelleme: new Date().toISOString()
+    });
+    notesTreeState[ders] = true;
+    notesTreeState[ders + "||" + topic] = true;
+    notesOpenDoc(ref.id);
+  }catch(e){
+    alert("Konu eklenemedi: " + (e && e.message ? e.message : e));
+  }
 }
 async function notesAddDoc(ders, topic){
   const baslik = prompt("Doküman adı (örn: 1.1):", "1.1");
   if (baslik === null) return;
-  const ref = await addDoc(notlarRef, {
-    ders, topic, baslik: baslik.trim() || "Başlıksız",
-    icerik: "", sira: Date.now(), guncelleme: new Date().toISOString()
-  });
-  notesTreeState[ders] = true;
-  notesTreeState[ders + "||" + topic] = true;
-  notesOpenDoc(ref.id);
+  try{
+    const ref = await addDoc(notlarRef, {
+      ders, topic, baslik: baslik.trim() || "Başlıksız",
+      icerik: "", sira: Date.now(), guncelleme: new Date().toISOString()
+    });
+    notesTreeState[ders] = true;
+    notesTreeState[ders + "||" + topic] = true;
+    notesOpenDoc(ref.id);
+  }catch(e){
+    alert("Doküman eklenemedi: " + (e && e.message ? e.message : e));
+  }
 }
 function notesRenameDers(eski){
   const yeni = prompt("Yeni ders adı:", eski);
