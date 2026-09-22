@@ -860,17 +860,27 @@ async function sendAppNotify(text){
 
 const PALETTE = ["#f97b6b","#ffb454","#7dd3fc","#c4b5fd","#34d399","#f472b6","#fbbf24","#60a5fa"];
 
-function loadCategoryColors(){
+// Ders renkleri artık paylaşılan (Firestore) bir kayıtta tutulur: hem sen elle seçebilirsin hem de
+// AI asistan ("Matematik'i kırmızı yap" gibi) ayarlayabilir; ikisi de aynı yerde buluşur.
+const dersRenkleriRef = doc(db, "ayarlar", "ders_renkleri");
+let categoryColors = {};
+
+(async function migrateLocalColorsOnce(){
   try{
     const raw = localStorage.getItem("odevKategoriRenkleri");
-    if (raw) return JSON.parse(raw);
+    if (!raw) return;
+    const local = JSON.parse(raw);
+    if (!local || !Object.keys(local).length){ localStorage.removeItem("odevKategoriRenkleri"); return; }
+    const snap = await getDoc(dersRenkleriRef);
+    if (!snap.exists()) await setDoc(dersRenkleriRef, { renkler: local });
+    localStorage.removeItem("odevKategoriRenkleri");
   }catch(e){}
-  return {};
-}
-function saveCategoryColorsToStorage(map){
-  localStorage.setItem("odevKategoriRenkleri", JSON.stringify(map));
-}
-let categoryColors = loadCategoryColors();
+})();
+
+onSnapshot(dersRenkleriRef, (snap) => {
+  categoryColors = (snap.exists() && snap.data().renkler) || {};
+  renderCalendar(); renderAgenda(); renderSubjectFilters(); renderDonut(); renderSubjectBars();
+});
 
 function colorFor(ders){
   const key = (ders || "Genel").trim() || "Genel";
@@ -882,7 +892,7 @@ function colorFor(ders){
 function setCategoryColor(ders, color){
   const key = (ders || "Genel").trim() || "Genel";
   categoryColors[key] = color;
-  saveCategoryColorsToStorage(categoryColors);
+  setDoc(dersRenkleriRef, { renkler: { [key]: color } }, { merge: true }).catch(()=>{});
 }
 function textColorFor(hex){
   const c = (hex || "#5eead4").replace("#", "");

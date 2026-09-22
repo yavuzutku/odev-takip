@@ -688,6 +688,10 @@ AJAN_SISTEM = (
     '- {"tip":"tamamla","ref":"k3","deger":true|false}\n'
     '- {"tip":"geri_getir","ref":"s1"} (cop listesinden)\n'
     '- {"tip":"mesaj_gonder","metin":str} (Telegram\'a mesaj gönder; gerektiğinde kullan)\n'
+    '- {"tip":"renk_ayarla","ders":"Matematik","renk":"#RRGGBB"} (dersin/kategorinin rengini ayarlar; uygulamadaki takvim, '
+    "görev çubukları ve grafiklerde o an kullanılır. Kullanıcı 'X dersini kırmızı yap' derse veya 'derslere göre otomatik "
+    "renk ata / hepsine renk ver' derse, dersler listesindeki her ders için birbirinden belirgin şekilde ayrışan, göz "
+    "yormayan (koyu arkaplanda okunur) bir hex renk seç ve her ders için ayrı bir renk_ayarla işlemi döndür.)\n"
     "Kurallar:\n"
     "- Kullanıcının niyetini anla ve gerekeni doğrudan yap; belirsizse en makul yorumla uygula ve ne yaptığını cevapta özetle. "
     "Onay bekleme, silme/toplu değişiklik dahil istenen her işlemi hemen uygula.\n"
@@ -977,6 +981,15 @@ def ajan_uygula(islemler, kaynak, refs, cop_refs, belgeler):
                 if metin:
                     send_telegram_duz(metin)
                     yapilan.append("📨 Telegram'a gönderildi")
+            elif tip == "renk_ayarla":
+                ders = _metin(i.get("ders"), 40).strip()
+                renk = _metin(i.get("renk"), 7).strip()
+                if ders and re.match(r"^#[0-9a-fA-F]{6}$", renk):
+                    ref = db.collection("ayarlar").document("ders_renkleri")
+                    ref.set({"renkler": {ders: renk}}, merge=True)
+                    yapilan.append(f"🎨 {ders} rengi ayarlandı ({renk})")
+                else:
+                    yapilan.append(f"⚠️ Renk ayarlanamadı (ders/renk geçersiz: {ders!r} {renk!r})")
         except Exception as e:
             print(f"Asistan işlemi hatası ({tip}): {e}")
             yapilan.append(f"⚠️ İşlem başarısız ({tip})")
