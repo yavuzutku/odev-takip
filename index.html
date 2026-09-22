@@ -41,6 +41,7 @@
     --border-hover:#5f6368;
     --serif: 'Iowan Old Style','Palatino Linotype','URW Palladio',Georgia,'Times New Roman',serif;
     --sans: 'Google Sans','Product Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --tl-hour-px: 56px;
   }
   /* Açık tema — Google Takvim'in klasik beyaz görünümü */
   :root[data-theme="light"]{
@@ -141,25 +142,35 @@
   .cal-more-btn{background:none;border:none;color:var(--text-faint);font-size:10px;font-weight:700;text-align:left;cursor:pointer;padding:1px 5px;font-family:var(--sans);}
   .cal-more-btn:hover{color:var(--text);}
 
-  .week-grid{display:flex;gap:8px;min-height:420px;}
-  .week-col{flex:1;min-width:0;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;transition:background .15s,border-color .15s;}
-  .week-col.today{border-color:var(--accent);}
-  .week-col.drop-target{background:var(--surface-hi);outline:1.5px dashed var(--accent);}
-  .week-col-head{font-family:var(--serif);font-size:13px;font-weight:600;color:var(--text-dim);cursor:pointer;display:flex;justify-content:space-between;padding-bottom:6px;margin-bottom:2px;border-bottom:1px solid var(--border-soft);}
-  .week-col-head span{color:var(--text);}
-  .week-col-body{display:flex;flex-direction:column;gap:5px;min-height:60px;flex:1;}
-
-  .day-timeline{border:1px solid var(--border-soft);border-radius:12px;overflow-y:auto;max-height:640px;}
-  .day-hour-row{display:flex;border-bottom:1px solid var(--border-soft);min-height:44px;transition:background .15s;}
-  .day-hour-row:last-child{border-bottom:none;}
-  .day-hour-row.drop-target{background:var(--surface-hi);}
-  .day-hour-label{width:56px;flex:none;padding:6px 8px;font-size:11px;color:var(--text-faint);border-right:1px solid var(--border-soft);}
-  .day-hour-body{flex:1;padding:5px 8px;display:flex;flex-direction:column;gap:5px;cursor:pointer;}
-
-  .mini-card{border-left:3px solid;padding:5px 7px;border-radius:7px;background:var(--surface);cursor:grab;}
-  .mini-card.done{opacity:.5;}
-  .mini-time{font-size:10px;color:var(--text-faint);}
-  .mini-title{font-size:12px;color:var(--text);font-weight:600;line-height:1.3;}
+  /* ---- Google Takvim tarzı zaman çizelgesi (hafta / gün görünümü) ---- */
+  .week-grid,.day-timeline{display:block;}
+  .tl-head-row{display:flex;position:sticky;top:0;z-index:6;background:var(--surface);}
+  .tl-head-spacer{width:52px;flex:none;}
+  .tl-head-col{flex:1;min-width:0;text-align:center;padding:2px 2px 8px;font-family:var(--serif);font-size:13px;font-weight:600;color:var(--text-dim);cursor:pointer;border-bottom:1px solid var(--border-soft);}
+  .tl-head-col .tl-head-day{display:block;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;font-family:var(--sans);font-weight:600;margin-bottom:2px;}
+  .tl-head-col .tl-head-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:var(--text);}
+  .tl-head-col.today .tl-head-num{background:var(--accent);color:var(--accent-ink);}
+  .tl-head-col:hover{color:var(--text);}
+  .tl-wrap{position:relative;border:1px solid var(--border-soft);border-radius:12px;overflow-y:auto;max-height:600px;}
+  .tl-body{position:relative;display:flex;}
+  .tl-scale{width:52px;flex:none;position:relative;}
+  .tl-hour-label{position:absolute;right:8px;font-size:10.5px;color:var(--text-faint);transform:translateY(-6px);white-space:nowrap;}
+  .tl-cols{position:relative;flex:1;min-width:0;display:flex;}
+  .tl-col{flex:1;min-width:0;position:relative;border-left:1px solid var(--border-soft);background-image:repeating-linear-gradient(to bottom, var(--border-soft) 0, var(--border-soft) 1px, transparent 1px, transparent var(--tl-hour-px));cursor:pointer;transition:background .12s;}
+  .tl-col.drop-target{background-color:var(--surface-hi);outline:1.5px dashed var(--accent);outline-offset:-1px;}
+  .tl-now-line{position:absolute;left:0;right:0;height:0;border-top:2px solid var(--danger);z-index:5;pointer-events:none;}
+  .tl-now-line::before{content:"";position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:var(--danger);}
+  .tl-free{position:absolute;left:2px;right:2px;border:1px dashed var(--accent);border-radius:8px;background:rgba(26,115,232,.07);pointer-events:none;font-size:10px;line-height:1.3;color:var(--accent);padding:3px 6px;overflow:hidden;z-index:1;}
+  .tl-event{position:absolute;box-sizing:border-box;border-radius:8px;padding:3px 7px;overflow:hidden;cursor:grab;border-left:3px solid rgba(0,0,0,.22);z-index:3;box-shadow:0 1px 2px rgba(0,0,0,.18);transition:box-shadow .12s,filter .12s;}
+  .tl-event:hover{filter:brightness(1.06);box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:8;}
+  .tl-event.dragging{opacity:.35;}
+  .tl-event.done{opacity:.55;}
+  .tl-event .tl-title{font-size:11.5px;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tl-event .tl-title .flag-icon{margin-right:3px;vertical-align:-1px;}
+  .tl-event.done .tl-title{text-decoration:line-through;}
+  .tl-event .tl-time{font-size:10px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tl-event.short .tl-time{display:none;}
+  .tl-event.short .tl-title{white-space:nowrap;}
 
   .dragging{opacity:.4;}
 
@@ -233,7 +244,7 @@
     .layout{flex-direction:column;}
     .agenda-panel{position:static;width:100%;}
     .cal-cell{min-height:74px;}
-    .week-grid{flex-direction:column;}
+    .tl-wrap{max-height:70vh;}
   }
 
   /* ---- App-level nav (Takvim / İstatistikler) ---- */
@@ -247,7 +258,7 @@
 
   /* ---- Animations ---- */
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-  .stat-card,.task,.mini-card,.cal-cell{animation:fadeUp .28s ease both;}
+  .stat-card,.task,.tl-event,.cal-cell{animation:fadeUp .28s ease both;}
   .view-pane{animation:fadeUp .22s ease both;}
 
   /* ---- Stat cards (yeni) ---- */
@@ -431,11 +442,12 @@
   .sub-progress{font-size:10.5px;font-weight:700;color:var(--accent);background:var(--surface-hi);border-radius:6px;padding:1px 6px;margin-left:2px;}
   .mini-sub{font-size:10px;color:var(--text-faint);margin-top:2px;}
 
-  /* ---- Gün görünümü boş zaman bildirimi & hafta ekleme butonu ---- */
-  .free-banner{font-size:11.5px;color:var(--accent);background:var(--surface-hi);border:1px dashed var(--accent);border-radius:8px;padding:5px 9px;}
-  .week-col-head .week-add{border:none;background:var(--surface-hi);color:var(--accent);width:20px;height:20px;border-radius:6px;cursor:pointer;font-size:14px;line-height:1;margin-left:6px;}
-  .week-col-head .week-head-r{display:flex;align-items:center;}
-  .mini-title .flag-icon{margin-right:3px;color:var(--danger);vertical-align:-1px;}
+  /* ---- Hücre içi hızlı etkileşim (inline oluşturma popover'ı) ---- */
+  .slot-popover{width:230px;max-width:88vw;background:var(--surface-hi);border:1px solid var(--border);border-radius:14px;padding:10px;box-shadow:0 16px 44px rgba(0,0,0,.5);position:fixed;z-index:90;animation:fadeUp .12s ease both;}
+  .slot-popover-time{font-size:11px;color:var(--text-faint);margin-bottom:6px;}
+  .slot-popover input{width:100%;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:13.5px;font-family:var(--sans);margin-bottom:8px;}
+  .slot-popover input:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring);}
+  .slot-popover-actions{display:flex;justify-content:flex-end;gap:6px;}
 
   /* ---- Odak modu ekleri ---- */
   .focus-current{display:none;align-items:center;gap:10px;margin-bottom:16px;padding:8px 12px;border-radius:10px;background:var(--surface);font-size:13px;max-width:420px;width:100%;}
@@ -502,7 +514,7 @@
   .cal-cell:hover{background:var(--surface-hi);}
   .cal-cell.today{box-shadow:none;background:rgba(66,133,244,.10);}
   .month-chip{font-weight:500;}
-  .week-col,.day-timeline{border-radius:10px;}
+  .tl-wrap{border-radius:10px;}
 
   /* Yan panel: açılıp kapanır, kendi içinde kayar */
   .agenda-panel{flex:0 0 330px;width:330px;max-height:calc(100vh - 96px);overflow-y:auto;top:72px;border-radius:16px;padding:14px;scrollbar-width:thin;}
@@ -1299,6 +1311,14 @@ function splitOccurrencesByDay(occs, rangeStart, rangeEnd){
 }
 
 // ---- Drag & drop moves ----
+function applyMoveOptimistic(id, patch){
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  // İyimser arayüz: Firestore onayını beklemeden yerel veriyi hemen güncelle ve yeniden çiz.
+  Object.assign(it, patch);
+  renderCalendar(); renderAgenda();
+  updateDoc(doc(db, "odevler", id), patch).catch(() => { toast("Taşıma kaydedilemedi, tekrar dene."); });
+}
 function moveItemToDay(id, dayKey){
   const it = items.find(x => x.id === id);
   if (!it) return;
@@ -1311,20 +1331,19 @@ function moveItemToDay(id, dayKey){
     const deltaMs = newStart - oldStart;
     patch.bitis_tarihi = new Date(oldEnd.getTime() + deltaMs).toISOString().slice(0,16);
   }
-  updateDoc(doc(db, "odevler", id), patch);
+  applyMoveOptimistic(id, patch);
 }
-function moveItemToHour(id, dayDate, hour){
+function moveItemToDateTime(id, newStart){
   const it = items.find(x => x.id === id);
   if (!it) return;
   const oldStart = toLocalDate(it.teslim_tarihi);
-  const newStart = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), hour, 0);
   const patch = { teslim_tarihi: newStart.toISOString().slice(0,16) };
   if (it.bitis_tarihi){
     const oldEnd = toLocalDate(it.bitis_tarihi);
     const deltaMs = newStart - oldStart;
     patch.bitis_tarihi = new Date(oldEnd.getTime() + deltaMs).toISOString().slice(0,16);
   }
-  updateDoc(doc(db, "odevler", id), patch);
+  applyMoveOptimistic(id, patch);
 }
 document.addEventListener("dragstart", (e) => {
   const card = e.target.closest("[data-drag-id]");
@@ -1332,6 +1351,23 @@ document.addEventListener("dragstart", (e) => {
   e.dataTransfer.setData("text/plain", card.getAttribute("data-drag-id"));
   e.dataTransfer.effectAllowed = "move";
   card.classList.add("dragging");
+  // Sürüklerken imlecin altındaki kart hafifçe büyüsün ve belirginleşsin (Google Takvim hissi).
+  try{
+    const r = card.getBoundingClientRect();
+    const clone = card.cloneNode(true);
+    clone.classList.remove("dragging");
+    clone.style.position = "fixed";
+    clone.style.top = "-1000px";
+    clone.style.left = "-1000px";
+    clone.style.width = r.width + "px";
+    clone.style.height = r.height + "px";
+    clone.style.transform = "scale(1.07)";
+    clone.style.boxShadow = "0 14px 34px rgba(0,0,0,.5)";
+    clone.style.pointerEvents = "none";
+    document.body.appendChild(clone);
+    e.dataTransfer.setDragImage(clone, r.width/2, Math.min(18, r.height/2));
+    setTimeout(() => clone.remove(), 0);
+  }catch(err){}
 });
 document.addEventListener("dragend", (e) => {
   const card = e.target.closest("[data-drag-id]");
@@ -1372,6 +1408,68 @@ function openDayPopover(key, anchorEl, dayItemsForKey){
   pop.querySelector(".day-popover-add").addEventListener("click", () => { closeDayPopover(); openModal(null, key); });
   pop.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", () => { closeDayPopover(); openModal(el.getAttribute("data-open")); }));
   dayPopoverEl = pop;
+}
+
+// ---- Hücre içi hızlı ekleme (bir zaman dilimine tıklanınca açılan bağlamsal popover) ----
+let slotPopoverEl = null;
+function closeSlotPopover(){
+  if (slotPopoverEl){ slotPopoverEl.remove(); slotPopoverEl = null; }
+}
+function openSlotPopover(dateTime, clientX, clientY){
+  closeSlotPopover();
+  closeDayPopover();
+  closeContextMenu();
+  const dayKey = localDayKey(dateTime);
+  const pop = document.createElement("div");
+  pop.className = "slot-popover";
+  pop.innerHTML =
+    '<div class="slot-popover-time">' + fmtDayLabel(dateTime) + ' · ' + fmtTime(dateTime) + '</div>' +
+    '<input type="text" id="slotPopoverInput" placeholder="Başlık ekle...">' +
+    '<div class="slot-popover-actions">' +
+      '<button type="button" class="btn btn-ghost" id="slotPopoverMore" style="padding:6px 10px;font-size:12px;">Detaylandır</button>' +
+      '<button type="button" class="btn btn-accent" id="slotPopoverAdd" style="padding:6px 12px;font-size:12px;">Ekle</button>' +
+    '</div>';
+  document.body.appendChild(pop);
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let left = clientX + 10, top = clientY - 10;
+  if (left + pw > window.innerWidth - 8) left = clientX - pw - 10;
+  if (top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
+  pop.style.left = Math.max(8, left) + "px";
+  pop.style.top = Math.max(8, top) + "px";
+  slotPopoverEl = pop;
+  const input = document.getElementById("slotPopoverInput");
+  setTimeout(() => input.focus(), 30);
+  async function quickCreate(){
+    const baslik = input.value.trim();
+    if (!baslik) { closeSlotPopover(); return; }
+    await addDoc(odevlerRef, {
+      baslik, ders: "", tur: "gorev", oncelik: "orta", notlar: "",
+      teslim_tarihi: dateTime.toISOString().slice(0,16),
+      bitis_tarihi: null, sure_dk: calcAverageDuration("", baslik, "gorev") || 30,
+      hatirlatmalar: [], altgorevler: [], tekrar: {tip:"yok", bitis:null}, bildirim_kapali: false,
+      gonderildi: false, tamamlandi: false, olusturulma: new Date().toISOString(),
+    });
+    toast("Eklendi ✓", true);
+    closeSlotPopover();
+  }
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter"){ e.preventDefault(); quickCreate(); }
+    if (e.key === "Escape"){ e.preventDefault(); closeSlotPopover(); }
+  });
+  document.getElementById("slotPopoverAdd").addEventListener("click", quickCreate);
+  document.getElementById("slotPopoverMore").addEventListener("click", () => {
+    const titleSoFar = input.value.trim();
+    closeSlotPopover();
+    openModal(null, dayKey);
+    fTarih.value = toLocalInputValue(dateTime);
+    fBitis.value = toLocalInputValue(new Date(dateTime.getTime() + 60*60000));
+    if (titleSoFar) fBaslik.value = titleSoFar;
+  });
+  setTimeout(() => {
+    document.addEventListener("click", function onDocClick(e){
+      if (slotPopoverEl && !slotPopoverEl.contains(e.target)){ closeSlotPopover(); document.removeEventListener("click", onDocClick); }
+    });
+  }, 0);
 }
 
 // ---- Right-click context menu: kopyala / yapıştır / tamamla / sil ----
@@ -1471,7 +1569,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("contextmenu", (e) => {
-  const chip = e.target.closest(".month-chip, .mini-card, .task, .day-popover-item");
+  const chip = e.target.closest(".month-chip, .tl-event, .task, .day-popover-item");
   if (chip){
     const id = chip.getAttribute("data-open") || chip.getAttribute("data-drag-id");
     const it = items.find(x => x.id === id);
@@ -1605,104 +1703,203 @@ function monthChipHtml(o){
   '</div>';
 }
 
-function renderWeekView(){
-  const wrap = document.getElementById("weekGrid");
-  wrap.innerHTML = "";
-  const start = startOfWeek(cursorDate);
-  const dayNames = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
-  const rangeEnd = new Date(start); rangeEnd.setDate(rangeEnd.getDate()+7);
-  const occs = expandItemsForRange(visibleItems(), start, rangeEnd);
-  const todayKey = localDayKey(new Date());
+// ---- Google Takvim tarzı zaman çizelgesi (hafta / gün) ----
+const TL_FIRST_HOUR = 7, TL_LAST_HOUR = 24; // 07:00 - 24:00 aralığı gösterilir
+const TL_TOTAL_MIN = (TL_LAST_HOUR - TL_FIRST_HOUR) * 60;
+function tlHourPx(){
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--tl-hour-px").trim();
+  return parseFloat(v) || 56;
+}
+function tlOccEnd(o){
+  if (o._occEnd) return o._occEnd;
+  const dur = o.sure_dk || 30;
+  return new Date(o._occStart.getTime() + dur*60000);
+}
+function tlMinutesFromStart(d){ return (d.getHours()*60 + d.getMinutes()) - TL_FIRST_HOUR*60; }
+function tlClampMin(m){ return Math.max(0, Math.min(TL_TOTAL_MIN, m)); }
 
-  for (let i = 0; i < 7; i++){
-    const d = new Date(start); d.setDate(d.getDate()+i);
-    const key = localDayKey(d);
-    const dayOccs = occs.filter(o => localDayKey(o._occStart) === key).sort((a,b)=> a._occStart - b._occStart);
-    const col = document.createElement("div");
-    col.className = "week-col" + (key===todayKey ? " today" : "");
-    col.setAttribute("data-daykey", key);
-    col.innerHTML =
-      '<div class="week-col-head"><span class="week-head-l">'+dayNames[i]+'</span><span class="week-head-r"><span>'+d.getDate()+'</span><button class="week-add" type="button" aria-label="Bu güne ekle" title="Bu güne ekle">+</button></span></div>'+
-      '<div class="week-col-body">'+ dayOccs.map(weekCardHtml).join("") +'</div>';
-    col.querySelector(".week-col-head").addEventListener("click", () => openModal(null, key));
-    col.querySelector(".week-add").addEventListener("click", (e) => { e.stopPropagation(); openModal(null, key); });
+// Aynı ana denk gelen kayıtları algılayıp sütunlara böler (Google Takvim'deki çakışma davranışı).
+function tlLayoutDay(dayOccs){
+  const sorted = dayOccs.slice().sort((a,b)=> a._occStart - b._occStart || (tlOccEnd(a) - tlOccEnd(b)));
+  let clusters = [], cur = [], curEnd = null;
+  sorted.forEach(o => {
+    const s = o._occStart, e = tlOccEnd(o);
+    if (cur.length && s >= curEnd){ clusters.push(cur); cur = []; curEnd = null; }
+    cur.push(o);
+    curEnd = curEnd ? new Date(Math.max(curEnd, e)) : e;
+  });
+  if (cur.length) clusters.push(cur);
+  clusters.forEach(cluster => {
+    const colEnds = [];
+    cluster.forEach(o => {
+      const s = o._occStart;
+      let placed = false;
+      for (let c = 0; c < colEnds.length; c++){
+        if (colEnds[c] <= s){ o._tlCol = c; colEnds[c] = tlOccEnd(o); placed = true; break; }
+      }
+      if (!placed){ o._tlCol = colEnds.length; colEnds.push(tlOccEnd(o)); }
+    });
+    cluster.forEach(o => o._tlCols = colEnds.length);
+  });
+  return sorted;
+}
+
+function tlEventHtml(o){
+  const hourPx = tlHourPx();
+  const sMin = tlClampMin(tlMinutesFromStart(o._occStart));
+  let eMin = tlClampMin(tlMinutesFromStart(tlOccEnd(o)));
+  if (eMin <= sMin) eMin = Math.min(TL_TOTAL_MIN, sMin + 15);
+  const top = Math.round(sMin * (hourPx/60));
+  const height = Math.max(20, Math.round((eMin - sMin) * (hourPx/60)));
+  const cols = o._tlCols || 1, col = o._tlCol || 0;
+  const wPct = 100/cols, left = wPct*col;
+  const bg = colorFor(o.ders), txt = textColorFor(bg);
+  const timeLabel = fmtTime(o._occStart) + (o._occEnd ? "–" + fmtTime(tlOccEnd(o)) : "");
+  return '<div class="tl-event'+(height<34?" short":"")+(o.tamamlandi?" done":"")+'" data-open="'+o.id+'"'+
+    (o._virtual ? '' : ' draggable="true" data-drag-id="'+o.id+'"') +
+    ' style="top:'+top+'px;height:'+height+'px;left:calc('+left+'% + 2px);width:calc('+wPct+'% - 4px);background:'+bg+';color:'+txt+';border-left-color:rgba(0,0,0,.22)" title="'+escapeHtml(o.baslik||"")+'">' +
+    '<div class="tl-title">'+(o.oncelik === "yuksek" ? flagIcon() : "")+escapeHtml(o.baslik||"(başlıksız)")+'</div>' +
+    '<div class="tl-time">'+timeLabel+'</div>' +
+  '</div>';
+}
+
+function tlNowLineHtml(dayDate){
+  const now = new Date();
+  if (localDayKey(dayDate) !== localDayKey(now)) return "";
+  const mins = tlMinutesFromStart(now);
+  if (mins <= 0 || mins >= TL_TOTAL_MIN) return "";
+  const top = Math.round(mins * (tlHourPx()/60));
+  return '<div class="tl-now-line" style="top:'+top+'px"></div>';
+}
+
+function tlFreeHtml(dayDate){
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  if (dayDate.getTime() < todayStart.getTime()) return "";
+  const isToday = localDayKey(dayDate) === localDayKey(new Date());
+  const hourPx = tlHourPx();
+  return dayFreeWindows(dayDate, isToday ? new Date() : undefined).map(([fs, fe]) => {
+    const sMin = tlClampMin(tlMinutesFromStart(fs));
+    const eMin = tlClampMin(tlMinutesFromStart(fe));
+    if (eMin - sMin < 20) return "";
+    const top = Math.round(sMin * (hourPx/60));
+    const height = Math.round((eMin - sMin) * (hourPx/60));
+    if (height < 22) return "";
+    const m = Math.round((fe-fs)/60000), hh = Math.floor(m/60), mm = m%60;
+    const durLabel = (hh ? hh + "sa " : "") + (mm ? mm + "dk" : "");
+    return '<div class="tl-free" style="top:'+top+'px;height:'+height+'px;">🕐 ' + durLabel.trim() + ' boş</div>';
+  }).join("");
+}
+
+function tlYToDate(dayDate, offsetY){
+  const hourPx = tlHourPx();
+  let mins = Math.round(offsetY / (hourPx/60));
+  mins = Math.round(mins/15)*15;
+  mins = Math.max(0, Math.min(TL_TOTAL_MIN - 15, mins));
+  const d = new Date(dayDate.getFullYear(), dayDate.getMonth(), dayDate.getDate(), TL_FIRST_HOUR, 0);
+  d.setMinutes(d.getMinutes() + mins);
+  return d;
+}
+
+function tlHourLabelsHtml(){
+  const hourPx = tlHourPx();
+  let html = "";
+  for (let h = TL_FIRST_HOUR; h < TL_LAST_HOUR; h++){
+    html += '<div class="tl-hour-label" style="top:'+((h-TL_FIRST_HOUR)*hourPx)+'px">'+String(h).padStart(2,"0")+':00</div>';
+  }
+  return html;
+}
+
+// dayList: [{key, date}]; headerHtml true => hafta görünümünde gün başlığı satırı da çizilir
+function renderTimeline(containerId, dayList, withHeader){
+  const wrap = document.getElementById(containerId);
+  const start = visibleItems();
+  const rangeStart = dayList[0].date;
+  const rangeEnd = new Date(dayList[dayList.length-1].date); rangeEnd.setDate(rangeEnd.getDate()+1);
+  const occs = expandItemsForRange(start, rangeStart, rangeEnd);
+  const byDay = {};
+  occs.forEach(o => { const k = localDayKey(o._occStart); (byDay[k] = byDay[k] || []).push(o); });
+  const todayKey = localDayKey(new Date());
+  const hourPx = tlHourPx();
+  const totalHeight = Math.round(TL_TOTAL_MIN * (hourPx/60));
+  const dayNames = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+
+  const headHtml = withHeader ?
+    '<div class="tl-head-row"><div class="tl-head-spacer"></div>' +
+      dayList.map(d => {
+        const key = d.key;
+        return '<div class="tl-head-col'+(key===todayKey?" today":"")+'" data-daykey="'+key+'">'+
+          '<span class="tl-head-day">'+dayNames[(d.date.getDay()+6)%7]+'</span>'+
+          '<span class="tl-head-num">'+d.date.getDate()+'</span></div>';
+      }).join("") +
+    '</div>' : "";
+
+  const colsHtml = dayList.map(d => {
+    const dayOccs = tlLayoutDay(byDay[d.key] || []);
+    return '<div class="tl-col" data-daykey="'+d.key+'">' +
+      tlFreeHtml(d.date) +
+      tlNowLineHtml(d.date) +
+      dayOccs.map(tlEventHtml).join("") +
+    '</div>';
+  }).join("");
+
+  wrap.innerHTML = headHtml +
+    '<div class="tl-wrap"><div class="tl-body" style="height:'+totalHeight+'px;">' +
+      '<div class="tl-scale">' + tlHourLabelsHtml() + '</div>' +
+      '<div class="tl-cols">' + colsHtml + '</div>' +
+    '</div></div>';
+
+  wrap.querySelectorAll(".tl-head-col").forEach(el => el.addEventListener("click", () => openModal(null, el.getAttribute("data-daykey"))));
+
+  wrap.querySelectorAll(".tl-col").forEach(col => {
+    const key = col.getAttribute("data-daykey");
+    const dayDate = dayList.find(d => d.key === key).date;
+    col.addEventListener("click", (e) => {
+      if (e.target.closest(".tl-event")) return;
+      const rect = col.getBoundingClientRect();
+      const dt = tlYToDate(dayDate, e.clientY - rect.top);
+      openSlotPopover(dt, e.clientX, e.clientY);
+    });
     col.addEventListener("dragover", (e) => { e.preventDefault(); col.classList.add("drop-target"); });
     col.addEventListener("dragleave", () => col.classList.remove("drop-target"));
     col.addEventListener("drop", (e) => {
       e.preventDefault(); col.classList.remove("drop-target");
       const id = e.dataTransfer.getData("text/plain");
-      if (id) moveItemToDay(id, key);
+      if (!id) return;
+      const rect = col.getBoundingClientRect();
+      const dt = tlYToDate(dayDate, e.clientY - rect.top);
+      moveItemToDateTime(id, dt);
     });
-    wrap.appendChild(col);
-  }
+  });
   wrap.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", (e) => {
     e.stopPropagation(); openModal(el.getAttribute("data-open"));
   }));
+
+  // Bugünü içeriyorsa "şimdi" çizgisinin biraz üstüne kaydır.
+  const scroller = wrap.querySelector(".tl-wrap");
+  if (scroller){
+    const now = new Date();
+    if (dayList.some(d => localDayKey(d.date) === localDayKey(now))){
+      const mins = tlClampMin(tlMinutesFromStart(now));
+      scroller.scrollTop = Math.max(0, Math.round(mins*(hourPx/60)) - 160);
+    } else {
+      scroller.scrollTop = Math.max(0, Math.round((9-TL_FIRST_HOUR)*hourPx) - 40);
+    }
+  }
+}
+
+function renderWeekView(){
+  const start = startOfWeek(cursorDate);
+  const dayList = [];
+  for (let i = 0; i < 7; i++){
+    const d = new Date(start); d.setDate(d.getDate()+i);
+    dayList.push({key: localDayKey(d), date: d});
+  }
+  renderTimeline("weekGrid", dayList, true);
 }
 
 function renderDayView(){
-  const wrap = document.getElementById("dayTimeline");
-  wrap.innerHTML = "";
   const dayStart = new Date(cursorDate.getFullYear(), cursorDate.getMonth(), cursorDate.getDate());
-  const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate()+1);
-  const occs = expandItemsForRange(visibleItems(), dayStart, dayEnd);
-  const byHour = {};
-  // Ajanda 07:00–23:00 aralığını gösterir; 07:00'den önceki kayıtlar 07:00 satırında toplanır.
-  const DAY_FIRST_HOUR = 7, DAY_LAST_HOUR = 23;
-  occs.forEach(o => { const h = Math.min(DAY_LAST_HOUR, Math.max(DAY_FIRST_HOUR, o._occStart.getHours())); (byHour[h] = byHour[h] || []).push(o); });
-  Object.keys(byHour).forEach(h => byHour[h].sort((a,b)=> a._occStart - b._occStart));
-  // Otomatik boş çalışma zamanı tespiti: her boşluk başladığı saatin satırında bildirim olarak görünür.
-  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-  const isToday = dayStart.getTime() === todayStart.getTime();
-  const freeByHour = {};
-  if (dayStart.getTime() >= todayStart.getTime()){
-    dayFreeWindows(dayStart, isToday ? new Date() : undefined).forEach(([fs, fe]) => {
-      const h = Math.min(DAY_LAST_HOUR, Math.max(DAY_FIRST_HOUR, fs.getHours()));
-      (freeByHour[h] = freeByHour[h] || []).push([fs, fe]);
-    });
-  }
-  function fmtFreeDur(ms){
-    const m = Math.round(ms/60000), hh = Math.floor(m/60), mm = m%60;
-    return (hh ? hh + " sa " : "") + (mm ? mm + " dk" : "").trim();
-  }
-
-  for (let h = DAY_FIRST_HOUR; h <= DAY_LAST_HOUR; h++){
-    const row = document.createElement("div");
-    row.className = "day-hour-row";
-    row.setAttribute("data-daykey", localDayKey(dayStart));
-    const hourItems = byHour[h] || [];
-    row.innerHTML =
-      '<div class="day-hour-label">'+String(h).padStart(2,"0")+':00</div>'+
-      '<div class="day-hour-body">'+
-        (freeByHour[h] || []).map(([fs, fe]) => '<div class="free-banner">🕐 ' + fmtTime(fs) + '–' + fmtTime(fe) + ' arası boş (' + fmtFreeDur(fe - fs) + ') — çalışmak için uygun</div>').join("") +
-        hourItems.map(weekCardHtml).join("") +'</div>';
-    row.addEventListener("dragover", (e) => { e.preventDefault(); row.classList.add("drop-target"); });
-    row.addEventListener("dragleave", () => row.classList.remove("drop-target"));
-    row.addEventListener("drop", (e) => {
-      e.preventDefault(); row.classList.remove("drop-target");
-      const id = e.dataTransfer.getData("text/plain");
-      if (id) moveItemToHour(id, dayStart, h);
-    });
-    row.querySelector(".day-hour-body").addEventListener("click", (e) => {
-      if (e.target.closest("[data-open]")) return;
-      openModal(null, localDayKey(dayStart));
-    });
-    wrap.appendChild(row);
-  }
-  wrap.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", (e) => {
-    e.stopPropagation(); openModal(el.getAttribute("data-open"));
-  }));
-}
-
-function weekCardHtml(o){
-  const timeLabel = fmtTime(o._occStart) + (o._occEnd ? "–"+fmtTime(o._occEnd) : "");
-  return '<div class="mini-card'+(o.tamamlandi?" done":"")+'" data-open="'+o.id+'"'+
-    (o._virtual ? '' : ' draggable="true" data-drag-id="'+o.id+'"') +
-    ' style="border-left-color:'+colorFor(o.ders)+'">' +
-    '<div class="mini-time">'+timeLabel+'</div>' +
-    '<div class="mini-title">'+(o.oncelik === "yuksek" ? flagIcon() : "")+escapeHtml(o.baslik||"(başlıksız)")+'</div>' +
-    ((o.altgorevler && o.altgorevler.length) ? '<div class="mini-sub">✓ '+o.altgorevler.filter(x=>x.d).length+'/'+o.altgorevler.length+'</div>' : '') +
-  '</div>';
+  renderTimeline("dayTimeline", [{key: localDayKey(dayStart), date: dayStart}], false);
 }
 
 function fmtTime(d){ return d.toLocaleTimeString("tr-TR", {hour:"2-digit", minute:"2-digit"}); }
@@ -1916,7 +2113,12 @@ function renderSubjectFilters(){
   });
   wrap.querySelectorAll(".chip-color").forEach(el => {
     el.addEventListener("click", (e) => e.stopPropagation());
-    el.addEventListener("input", (e) => {
+    // "input" olayı native renk seçiciyi sürüklerken defalarca tetiklenir; her tetiklemede
+    // renderSubjectFilters (Firestore onSnapshot üzerinden) bu <input>'u DOM'dan silip yeniden
+    // oluşturuyordu, bu da seçim sırasında etkileşimi kesip son rengin hiç kaydedilmemesine yol
+    // açıyordu (sert yenilemede eski renk geri geliyormuş gibi görünüyordu). "change" olayı yalnızca
+    // seçim tamamlandığında (bir kez) tetiklenir, bu yüzden güvenli.
+    el.addEventListener("change", (e) => {
       setCategoryColor(el.getAttribute("data-cat"), e.target.value);
       renderCalendar(); renderAgenda();
     });
