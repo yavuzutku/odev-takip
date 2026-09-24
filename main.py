@@ -168,9 +168,9 @@ BILDIRIM_KADEMELERI = [
     (60,        15),    # son 1 saat -> 15 dk'da bir
     (3 * 60,    60),    # son 3 saat -> saatte bir
     (24 * 60,   120),   # teslim günü (son 24 saat) -> 2 saatte bir
-    (3 * 24*60, 240),   # 1-3 gün kala -> 4 saatte bir
+    (3 * 24*60, 1440),  # 1-3 gün kala -> günde 1
 ]
-BILDIRIM_UZAK_ARALIK_DK = 720   # 3 günden fazla varsa -> 12 saatte bir (günde 2)
+BILDIRIM_UZAK_ESIK_DK = 3 * 24 * 60   # 3 günden fazla varsa -> hiç bildirim yok
 BILDIRIM_GECIKME_ARALIK_DK = 60  # süre geçmiş, tamamlanmamış -> saatte bir
 
 # ---- Checklist (günlük / haftalık basit işler) bildirim ayarları ----
@@ -264,14 +264,17 @@ def checklist_kontrol_et(now):
 
 
 def bildirim_araligi_dk(teslim_dt, now):
-    """Teslim süresi yaklaştıkça bildirim aralığı otomatik kısalır (daha sık gelir)."""
+    """Teslim süresi yaklaştıkça bildirim aralığı otomatik kısalır (daha sık gelir).
+    3 günden fazla varsa None döner -> bildirim gönderilmez."""
     kalan_dk = (teslim_dt - now).total_seconds() / 60
     if kalan_dk < 0:
         return BILDIRIM_GECIKME_ARALIK_DK
+    if kalan_dk > BILDIRIM_UZAK_ESIK_DK:
+        return None
     for esik_dk, aralik_dk in BILDIRIM_KADEMELERI:
         if kalan_dk <= esik_dk:
             return aralik_dk
-    return BILDIRIM_UZAK_ARALIK_DK
+    return None
 
 
 def sessiz_saatte_mi(now):
@@ -301,6 +304,45 @@ def mesaj_olustur(data, dakika, tekrar=False):
     satirlar.append("")
     satirlar.append("Tamamladıysan aşağıdaki butona bas 👇")
     return "\n".join(satirlar)
+
+
+def toplu_mesaj_olustur(bekleyen):
+    """Birden fazla ödev bildirimini TEK mesajda birleştirir."""
+    if len(bekleyen) == 1:
+        _, data, kalan_dk, tekrar = bekleyen[0]
+        return mesaj_olustur(data, kalan_dk, tekrar=tekrar)
+    satirlar = [f"🚨 *{len(bekleyen)} ÖDEV HATIRLATMASI!*", ""]
+    for _, data, kalan_dk, _ in bekleyen:
+        satirlar.append(f"📚 *{data.get('baslik')}* ({data.get('ders') or '-'})")
+        satirlar.append(f"   ⏰ {sure_metni(kalan_dk)} — 🗓️ {_yerel_str(data.get('teslim_tarihi'), cikti='%d.%m.%Y %H:%M')}")
+        if data.get("notlar"):
+            satirlar.append(f"   📝 {data.get('notlar')}")
+        satirlar.append("")
+    satirlar.append("Tamamladığını işaretlemek için aşağıdaki butonlara bas 👇")
+    return "\n".join(satirlar).strip()
+
+
+def send_telegram_interactive_toplu(message_text, bekleyen):
+    """Birleşik mesajı, her ödev için ayrı buton satırıyla gönderir."""
+    keyboard = []
+    for doc_id, data, _, _ in bekleyen:
+        kisa = (data.get("baslik") or "Ödev")[:20]
+        keyboard.append([
+            {"text": f"✅ {kisa}", "callback_data": f"done_{doc_id}"},
+            {"text": "⏰ Ertele", "callback_data": f"snooze_{doc_id}"},
+        ])
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": message_text,
+        "parse_mode": "Markdown",
+        "reply_markup": {"inline_keyboard": keyboard},
+    }
+    res = requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
+    if res.status_code != 200:
+        print(f"Toplu gönderim hatası: {res.status_code} {res.text}")
+        return send_telegram(message_text)
+    mesaj_kaydet("giden", message_text)
+    return res
 
 
 def liste_metni(baslik, docs):
@@ -1604,6 +1646,7 @@ def check_assignments():
             print(f"Günlük özet hatası: {e}")
         return jsonify({"status": "ok", "gonderilen_bildirim": 0, "not": "sessiz saatler (01:00-07:00)"})
 
+    bekleyen = []  # (doc_id, data, kalan_dk, tekrar) - bu turda bildirimi gidecekler
     for d in docs:
         data = d.to_dict()
 
@@ -1621,6 +1664,8 @@ def check_assignments():
 
         kalan_dk = (teslim_dt - now).total_seconds() / 60
         aralik_dk = bildirim_araligi_dk(teslim_dt, now)
+        if aralik_dk is None:
+            continue  # 3 günden fazla var, henüz bildirim zamanı değil
 
         son = data.get("son_hatirlatma")
         gonder = False
@@ -1635,14 +1680,19 @@ def check_assignments():
                 gonder = True
 
         if gonder:
-            res = send_telegram_interactive(mesaj_olustur(data, int(kalan_dk), tekrar=bool(son)), d.id)
-            if res.status_code == 200:
-                odevler_ref.document(d.id).update(
+            bekleyen.append((d.id, data, int(kalan_dk), bool(son)))
+
+    if bekleyen:
+        mesaj = toplu_mesaj_olustur(bekleyen)
+        res = send_telegram_interactive_toplu(mesaj, bekleyen)
+        if res.status_code == 200:
+            for doc_id, _, _, _ in bekleyen:
+                odevler_ref.document(doc_id).update(
                     {"gonderildi": True, "son_hatirlatma": now.strftime(ZAMAN_FORMAT_SANIYE)}
                 )
-                gonderilen_sayisi += 1
-            else:
-                print(f"Telegram gönderim hatası ({d.id}): {res.status_code} {res.text}")
+            gonderilen_sayisi = len(bekleyen)
+        else:
+            print(f"Telegram toplu gönderim hatası: {res.status_code} {res.text}")
 
     eski_kayitlari_temizle()
 
