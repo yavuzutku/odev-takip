@@ -557,7 +557,7 @@
 .nt-shell.out-on .nt-out{display:flex;}
 .nt-shell.focus{position:fixed;inset:0;z-index:60;height:100vh;border-radius:0;border:none;}
 .nt-shell.focus .nt-side,.nt-shell.focus .nt-out,.nt-shell.focus .nt-menubar,.nt-shell.focus .nt-sidebtn,.nt-shell.focus .nt-outbtn{display:none;}
-.nt-focus-exit{display:none;padding:5px 11px;}
+.nt-focus-exit{display:none;position:absolute;top:10px;right:14px;z-index:5;}
 .nt-shell.focus .nt-focus-exit{display:inline-flex;}
 .nt-ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 .nt-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 12px;font:600 12.5px var(--sans);cursor:pointer;}
@@ -664,6 +664,9 @@
 .nt-body ul.todo li[data-done="1"]{color:var(--text-faint);text-decoration:line-through;}
 ::highlight(ntfind){background:#ffe58a;color:#000;}
 ::highlight(ntcur){background:#ff9632;color:#000;}
+::highlight(ntgram){text-decoration:underline wavy #ea4335;text-decoration-thickness:1.5px;text-underline-offset:2px;}
+::highlight(ntgram2){text-decoration:underline wavy #4285f4;text-decoration-thickness:1.5px;text-underline-offset:2px;}
+#ntGramCnt{white-space:nowrap;}
 .nt-statbar{display:flex;align-items:center;gap:14px;padding:5px 14px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-faint);background:var(--surface);}
 .nt-statbar select{background:transparent;border:none;color:var(--text-dim);font:11.5px var(--sans);cursor:pointer;}
 .nt-statbar .sp{flex:1;}
@@ -737,69 +740,101 @@
   .nt-menubar{overflow-x:auto;}
 }
 @media print{.nt-shell{display:none!important;}}
-/* ---- Görünüm cilası ---- */
-.nt-shell{border-radius:18px;box-shadow:0 2px 14px rgba(0,0,0,.18);}
-.nt-side{background:linear-gradient(180deg,var(--bg-soft),var(--surface));}
-.nt-side-head{padding:14px 14px 8px;}
-.nt-side-head b{font-size:15px;letter-spacing:-.01em;}
-.nt-row{padding:7px 10px;border-radius:10px;transition:background .12s;}
-.nt-row.ders{margin-top:2px;}
-.nt-row.ders>svg:nth-of-type(2){color:var(--accent);}
-.nt-row.doc{position:relative;font-size:13px;}
-.nt-row.active{background:color-mix(in srgb,var(--accent) 18%,transparent);}
-.nt-row.active::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:3px;background:var(--accent);}
-.nt-row.topic{color:var(--text-dim);font-weight:600;font-size:13px;}
-.nt-kids{margin-left:16px;padding-left:8px;}
-.nt-sec{padding:12px 10px 5px;}
-.nt-titlebar{padding:12px 16px 2px;gap:8px;}
-.nt-title{font-size:21px;font-weight:700;letter-spacing:-.01em;}
-.nt-status{font-size:12px;}
-.nt-menubar{padding:2px 14px 6px;}
-.nt-menubar button{padding:5px 11px;border-radius:8px;font-size:13px;}
-.nt-toolbar{gap:3px 2px;padding:6px 10px;margin:0 14px 10px;border-radius:14px;background:var(--surface-hi);border:1px solid var(--border);box-shadow:0 1px 2px rgba(0,0,0,.12);}
-.nt-toolbar .nt-iconbtn{width:32px;height:32px;border-radius:9px;}
-.nt-toolbar .nt-iconbtn .nt-ic{width:17px;height:17px;}
-.nt-toolbar .sep{height:22px;margin:0 6px;}
-.nt-toolbar select{height:32px;border-radius:9px;padding:0 6px;font-weight:500;}
-.nt-toolbar select:hover,.nt-toolbar select:focus{background:var(--border);outline:none;}
-.nt-iconbtn.on{background:color-mix(in srgb,var(--accent) 26%,transparent);color:var(--accent);}
-.nt-split{height:32px;}
-.nt-split .nt-arrow{width:16px;height:32px;}
-.nt-sizebox{height:32px;background:var(--surface);border-radius:10px;margin:0 4px;padding:0 2px;}
-.nt-sizebox input{width:32px;font-size:13px;font-weight:700;}
-.nt-sizebox .nt-iconbtn{width:24px;height:28px;}
-.nt-sizes{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;width:188px;}
-.nt-sizes .nt-mi{justify-content:center;padding:8px 0;font-weight:600;}
-.nt-sizes .nt-mi.cur{background:var(--accent);color:var(--accent-ink);}
-.nt-canvas{padding:26px 18px 70px;}
-.nt-page{border-radius:6px;padding:64px 80px 100px;}
-.nt-body{font-size:16px;line-height:1.7;}
-.nt-body h1{font-size:2.1em;font-weight:800;letter-spacing:-.02em;}
-.nt-body h2{font-weight:700;letter-spacing:-.01em;}
-.nt-body ::selection{background:color-mix(in srgb,var(--accent) 35%,transparent);}
-.nt-statbar{padding:6px 16px;background:var(--bg-soft);}
-.nt-card{border-radius:20px;padding:30px 30px 26px;}
-.nt-card h2{font-size:22px;letter-spacing:-.01em;}
-.nt-opt{border-radius:14px;padding:15px 16px;transition:border-color .12s,transform .12s;}
-.nt-opt:hover{transform:translateY(-1px);}
-.nt-pop{border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.4);padding:7px;}
-.nt-mi{border-radius:9px;padding:8px 11px;}
-.nt-float{border-radius:12px;padding:4px;}
-.nt-modal{border-radius:18px;padding:24px;}
-.nt-shell.focus{background:var(--nt-canvas);}
-.nt-shell.focus .nt-titlebar{padding:10px 18px 2px;}
-.nt-shell.focus .nt-page{margin-top:6px;}
-.nt-tree,.nt-canvas,.nt-outline,.nt-pop{scrollbar-width:thin;scrollbar-color:var(--border-hover) transparent;}
-@media (max-width:900px){
-  .nt-shell{border-radius:14px;}
-  .nt-toolbar{margin:0 8px 8px;}
-  .nt-titlebar{padding:10px 8px 2px;}
-  .nt-title{font-size:18px;}
-  .nt-page{padding:26px 18px 60px;}
-  .nt-focus-exit{font-size:11px;padding:4px 8px;}
-}
-
 .nt-body.blank>p:only-child::before{content:"Yazmaya başla… (# başlık, - liste, [] yapılacak, > alıntı)";color:var(--text-faint);pointer-events:none;}
+/* ===== Notlarım v3: görsel yenileme ===== */
+.nt-shell{border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.18);border-color:var(--border);}
+.nt-side{background:linear-gradient(180deg,var(--bg-soft),var(--surface));width:300px;}
+.nt-side-head{padding:16px 14px 8px;}
+.nt-side-head b{font-size:16px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
+.nt-side-head b::before{content:"";width:10px;height:10px;border-radius:50%;background:conic-gradient(#4285f4,#34a853,#f9ab00,#ea4335,#4285f4);}
+.nt-search input{border-radius:12px;padding:9px 12px 9px 32px;background:var(--surface);transition:box-shadow .15s,border-color .15s;}
+.nt-tree{scrollbar-width:thin;}
+.nt-sec{padding:14px 10px 5px;font-size:10px;letter-spacing:.09em;}
+.nt-row{padding:7px 10px;border-radius:11px;transition:background .12s,transform .12s;position:relative;}
+.nt-row.ders{margin-top:2px;}
+.nt-row.ders .nt-cnt,.nt-row.topic .nt-cnt{background:var(--surface-hi);border-radius:20px;padding:1px 8px;font-weight:600;}
+.nt-row.doc{font-size:13px;}
+.nt-row.doc .nt-time{font-size:10.5px;color:var(--text-faint);flex:none;}
+.nt-row.doc:hover .nt-time{display:none;}
+.nt-row.doc.active{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 26%,transparent),color-mix(in srgb,var(--accent) 8%,transparent));}
+.nt-row.doc.active::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:3px;background:var(--accent);}
+.nt-kids{border-left:1.5px dashed var(--border);}
+.nt-add{border-radius:9px;padding:6px 10px;opacity:.85;}
+.nt-side-foot{background:var(--bg-soft);}
+/* Başlık / araç çubuğu */
+.nt-title{font:800 27px/1.25 var(--sans);letter-spacing:-.02em;padding:6px 10px;}
+.nt-status{background:var(--bg-soft);border-radius:20px;padding:4px 11px;}
+.nt-toolbar{border-radius:14px;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(10px);box-shadow:0 2px 10px rgba(0,0,0,.12);position:sticky;top:0;z-index:4;}
+.nt-toolbar .nt-iconbtn{border-radius:9px;transition:background .12s,transform .1s;}
+.nt-toolbar .nt-iconbtn:active{transform:scale(.92);}
+.nt-menubar button{border-radius:8px;}
+/* Sayfa */
+.nt-canvas{background:radial-gradient(1100px 500px at 50% -120px,color-mix(in srgb,var(--nt-c,var(--accent)) 14%,transparent),transparent),var(--nt-canvas);scrollbar-width:thin;}
+.nt-page{border-radius:16px;border:1px solid var(--border-soft);border-top:5px solid var(--nt-c,var(--accent));box-shadow:0 10px 34px rgba(0,0,0,.2);padding:44px 82px 100px;animation:ntIn .35s ease;}
+@keyframes ntIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.nt-body{font:16.5px/1.78 var(--sans);caret-color:var(--nt-c,var(--accent));}
+.nt-body:empty:before,.nt-body.blank>p:only-child::before{content:"Yazmaya başla…  ( /  ile blok ekle · #  başlık · -  liste · []  yapılacak )";}
+.nt-body h1{font-size:2.15em;letter-spacing:-.025em;font-weight:800;padding-bottom:.25em;border-bottom:1px solid var(--border);margin-top:1em;}
+.nt-body h2{font-size:1.55em;font-weight:700;letter-spacing:-.015em;}
+.nt-body h2::before{content:"";display:inline-block;width:5px;height:.85em;border-radius:3px;background:var(--nt-c,var(--accent));margin-right:10px;vertical-align:-.08em;}
+.nt-body h3{font-weight:700;color:var(--nt-c,var(--accent));}
+.nt-body blockquote{font-size:1.04em;font-style:italic;border-left-width:5px;padding:10px 20px;position:relative;}
+.nt-body blockquote::before{content:"“";position:absolute;right:14px;top:-6px;font-size:54px;opacity:.15;font-style:normal;}
+.nt-body pre{background:#14161a;color:#e6e9ef;border:none;border-left:4px solid var(--nt-c,var(--accent));border-radius:12px;padding:14px 18px;}
+:root[data-theme="light"] .nt-body pre{background:#f3f5f9;color:#20242b;border:1px solid var(--border);border-left:4px solid var(--nt-c,var(--accent));}
+.nt-body code{background:color-mix(in srgb,var(--nt-c,var(--accent)) 14%,transparent);color:var(--text);}
+.nt-body pre code{background:none;}
+.nt-body table{border-radius:12px;overflow:hidden;border-collapse:separate;border-spacing:0;border:1px solid var(--border-hover);}
+.nt-body td,.nt-body th{border:none;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
+.nt-body tr>*:last-child{border-right:none;}.nt-body tr:last-child>*{border-bottom:none;}
+.nt-body th{background:color-mix(in srgb,var(--nt-c,var(--accent)) 16%,var(--bg-soft));font-weight:700;}
+.nt-body tbody tr:nth-child(even) td{background:var(--bg-soft);}
+.nt-body img{border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.25);}
+.nt-body hr{border-top:none;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--nt-c,var(--accent)),transparent);opacity:.6;}
+.nt-body .callout{border-radius:14px;border-left-width:0;border:1px solid rgba(66,133,244,.35);padding:12px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08);}
+.nt-body .callout::before{content:"ℹ️  Bilgi";font-size:11.5px;}
+.nt-body .callout[data-t="warn"]{border-color:rgba(249,171,0,.5);}.nt-body .callout[data-t="warn"]::before{content:"⚠️  Uyarı";}
+.nt-body .callout[data-t="tip"]{border-color:rgba(52,168,83,.5);}.nt-body .callout[data-t="tip"]::before{content:"💡  İpucu";}
+.nt-body .callout[data-t="imp"]{border-color:rgba(234,67,53,.5);}.nt-body .callout[data-t="imp"]::before{content:"❗  Önemli";}
+.nt-body ul.todo li::before{border-radius:50%;transition:background .15s,transform .15s;}
+.nt-body ul.todo li[data-done="1"]::before{transform:scale(1.08);}
+.nt-body ::selection{background:color-mix(in srgb,var(--nt-c,var(--accent)) 35%,transparent);}
+/* Üst bilgi + ilerleme */
+.nt-crumb{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 14px;font-size:12px;color:var(--text-faint);user-select:none;}
+.nt-crumb .pill{display:inline-flex;align-items:center;gap:7px;background:color-mix(in srgb,var(--nt-c,var(--accent)) 16%,transparent);color:var(--text);border-radius:20px;padding:3px 11px 3px 9px;font-weight:600;}
+.nt-crumb .pill i{width:8px;height:8px;border-radius:50%;background:var(--nt-c,var(--accent));}
+.nt-prog{height:3px;background:transparent;flex:none;}
+.nt-prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--nt-c,var(--accent)),#f9ab00);border-radius:0 3px 3px 0;transition:width .1s;}
+.nt-statbar{background:var(--bg-soft);}
+/* Ana sayfa */
+.nt-empty{align-items:flex-start;background:radial-gradient(900px 420px at 20% -80px,color-mix(in srgb,var(--accent) 16%,transparent),transparent),var(--nt-canvas);}
+.nh{width:100%;max-width:940px;margin:0 auto;animation:ntIn .4s ease;}
+.nh-hero{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-bottom:18px;}
+.nh-hero h2{margin:0;font-size:30px;letter-spacing:-.025em;font-weight:800;flex:1;min-width:220px;}
+.nh-hero h2 small{display:block;font-size:13px;font-weight:500;color:var(--text-dim);letter-spacing:0;margin-top:4px;}
+.nh-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+.nh-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;}
+.nh-stat b{display:block;font-size:24px;letter-spacing:-.02em;}.nh-stat span{font-size:11.5px;color:var(--text-dim);}
+.nh-h{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-faint);font-weight:700;margin:20px 2px 10px;}
+.nh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;}
+.nh-card{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-top:4px solid var(--c);border-radius:14px;padding:13px 15px;transition:transform .15s,box-shadow .15s,border-color .15s;}
+.nh-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.22);border-color:var(--c);}
+.nh-card b{font-size:15px;color:var(--text);}.nh-card .p{font-size:11.5px;color:var(--c);font-weight:600;}
+.nh-card .s{font-size:12.5px;color:var(--text-dim);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.nh-card .m{font-size:11px;color:var(--text-faint);margin-top:auto;}
+.nh-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.nh-chip{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:30px;padding:7px 14px;font:600 13px var(--sans);color:var(--text);transition:border-color .15s,transform .15s;}
+.nh-chip:hover{border-color:var(--c);transform:translateY(-1px);}
+.nh-chip i{width:9px;height:9px;border-radius:50%;background:var(--c);}.nh-chip em{font-style:normal;color:var(--text-faint);font-weight:500;}
+/* Slash menüsü */
+.nt-slash{position:fixed;z-index:210;width:270px;max-height:320px;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.4);padding:6px;display:none;}
+.nt-slash .h{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);font-weight:700;padding:6px 10px 3px;}
+.nt-slash button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:11px;width:100%;padding:7px 10px;border-radius:9px;cursor:pointer;font:13px var(--sans);color:var(--text);}
+.nt-slash button .ico{width:30px;height:30px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex:none;}
+.nt-slash button small{display:block;font-size:11px;color:var(--text-faint);}
+.nt-slash button.on{background:color-mix(in srgb,var(--accent) 20%,transparent);}
+@media (max-width:900px){.nt-page{padding:26px 18px 70px;}.nh-stats{grid-template-columns:repeat(2,1fr);}.nt-title{font-size:21px;}}
+@media (prefers-reduced-motion:reduce){.nt-page,.nh{animation:none;}}
 </style>
 </head>
 <body>
@@ -995,6 +1030,7 @@
           <div class="nt-side-foot"><span id="ntStorage"></span><button class="nt-iconbtn" type="button" id="ntStorageBtn" title="Kayıt yerini değiştir" data-ic="folder"></button></div>
         </aside>
         <section class="nt-main" id="ntMain">
+          <button class="nt-btn nt-focus-exit" type="button" id="ntFocusExit">Odak modundan çık</button>
           <div class="nt-gate" id="ntGate" style="display:none;"></div>
           <div class="nt-empty" id="ntEmpty">
             <div class="nt-card">
@@ -1017,7 +1053,6 @@
               <input type="text" class="nt-title" id="ntTitle" placeholder="Başlıksız doküman" autocomplete="off">
               <button class="nt-iconbtn" type="button" id="ntStarBtn" title="Favori" data-ic="star"></button>
               <span class="nt-status" id="ntStatus"></span>
-              <button class="nt-btn nt-focus-exit" type="button" id="ntFocusExit" title="Esc">Odak modundan çık</button>
               <button class="nt-iconbtn nt-outbtn" type="button" id="ntOutBtn" title="İçindekiler" data-ic="outline"></button>
             </div>
             <div class="nt-menubar" id="ntMenubar"></div>
@@ -1039,7 +1074,9 @@
             </div>
             <div class="nt-statbar">
               <span id="ntWords"></span>
+              <span id="ntGramCnt"></span>
               <span class="sp"></span>
+              <select id="ntLang" title="Yazım/dilbilgisi denetim dili"></select>
               <select id="ntZoom" title="Yakınlaştırma">
                 <option value="0.8">%80</option><option value="0.9">%90</option><option value="1" selected>%100</option>
                 <option value="1.15">%115</option><option value="1.3">%130</option><option value="1.5">%150</option>
@@ -3927,7 +3964,7 @@ function nDl(name, mime, data){
 // ---- Dosya biçimi: her not, tek başına açılabilen bir .html dosyasıdır ----
 const N_FILE_CSS = 'body{font:16px/1.65 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;max-width:820px;margin:32px auto;padding:0 20px;color:#202124;-webkit-print-color-adjust:exact;print-color-adjust:exact}h1{font-size:2em}h2{font-size:1.5em}h3{font-size:1.2em}a{color:#1a73e8}img{max-width:100%;height:auto}blockquote{margin:.7em 0;padding:4px 16px;border-left:4px solid #1a73e8;color:#5f6368;background:#f1f5fd}pre{background:#f1f3f4;border-radius:8px;padding:12px;white-space:pre-wrap;font:13.5px/1.55 Consolas,monospace}code{background:#f1f3f4;border-radius:4px;padding:1px 4px}table{border-collapse:collapse;width:100%;margin:.8em 0}td,th{border:1px solid #bdc1c6;padding:6px 10px;vertical-align:top}th{background:#f1f3f4;text-align:left}hr{border:none;border-top:2px solid #dadce0}.callout{margin:.8em 0;padding:10px 16px;border-left:5px solid #4285f4;background:#e8f0fe;border-radius:0 8px 8px 0}.callout::before{content:"Bilgi";display:block;font:700 11px sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#4285f4}.callout[data-t="warn"]{border-color:#f9ab00;background:#fef7e0}.callout[data-t="warn"]::before{content:"Uyarı";color:#b06000}.callout[data-t="tip"]{border-color:#34a853;background:#e6f4ea}.callout[data-t="tip"]::before{content:"İpucu";color:#188038}.callout[data-t="imp"]{border-color:#ea4335;background:#fce8e6}.callout[data-t="imp"]::before{content:"Önemli";color:#d93025}ul.todo{list-style:none;padding-left:2px}ul.todo li::before{content:"\\2610\\00a0"}ul.todo li[data-done="1"]::before{content:"\\2611\\00a0"}ul.todo li[data-done="1"]{color:#80868b;text-decoration:line-through}';
 function nBuildFile(n){
-  const meta = {id:n.id, ders:n.ders, topic:n.topic, baslik:n.baslik, sira:n.sira, olusturma:n.olusturma, guncelleme:n.guncelleme, yildiz:!!n.yildiz};
+  const meta = {id:n.id, ders:n.ders, topic:n.topic, baslik:n.baslik, sira:n.sira, olusturma:n.olusturma, guncelleme:n.guncelleme, yildiz:!!n.yildiz, dil:n.dil || 'auto'};
   const json = JSON.stringify(meta).replace(/</g, '\\u003c');
   return '<!DOCTYPE html>\n<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + escapeHtml(n.baslik || '') + '</title>\n<script type="application/json" id="not-meta">' + json + '<\/script>\n<style>' + N_FILE_CSS + '</style></head><body><article>\n' + (n.icerik || '') + '\n</article></body></html>';
 }
@@ -3946,7 +3983,7 @@ function nParseFile(text, dn, tn, path, mtime){
     baslik: meta.baslik || (d.title && d.title.trim()) || base,
     icerik, sira: meta.sira || mtime || Date.now(),
     olusturma: meta.olusturma || iso, guncelleme: meta.guncelleme || iso,
-    yildiz: !!meta.yildiz, _path: path
+    yildiz: !!meta.yildiz, dil: meta.dil || 'auto', _path: path
   };
 }
 
@@ -4352,7 +4389,7 @@ function nStarUI(){
 
 // ---- Dokümanı aç / kaydet ----
 function nCloseEditor(){
-  nCur = null; nDirty = false; clearTimeout(nTimer);
+  nCur = null; nDirty = false; clearTimeout(nTimer); nGramReset();
   $n('ntEditor').style.display = 'none'; $n('ntGate').style.display = 'none'; $n('ntEmpty').style.display = '';
   nHideFloat(); renderNotesTree();
 }
@@ -4366,6 +4403,7 @@ async function nOpen(id, focusTitle, findQ){
   nBody.innerHTML = n.icerik || '<p><br></p>';
   nSuppress = false; nDirty = false;
   nCanvas.scrollTop = 0; nSetStatus(''); nStarUI(); nStats(); nOutline(); nFindClear(); nHideFloat();
+  nGramReset(); $n('ntLang').value = n.dil || 'auto'; if (nGram.on) nGramSoon();
   renderNotesTree();
   if (nNarrow()) nShell.classList.add('side-off');
   if (focusTitle){ $n('ntTitle').focus(); $n('ntTitle').select(); }
@@ -4869,23 +4907,9 @@ function nBuildToolbar(){
   sel('ntBlock', 'Paragraf stili', [['P','Normal metin'],['H1','Başlık 1'],['H2','Başlık 2'],['H3','Başlık 3'],['BLOCKQUOTE','Alıntı'],['PRE','Kod bloğu']], v => { nBlock(v); });
   sel('ntFont', 'Yazı tipi', [['','Varsayılan'],['Arial','Arial'],['Georgia','Georgia'],['Times New Roman','Times New Roman'],['Verdana','Verdana'],['Trebuchet MS','Trebuchet MS'],['Courier New','Courier New'],['Comic Sans MS','Comic Sans'],['Impact','Impact']], v => nFont(v));
   const sb = document.createElement('span'); sb.className = 'nt-sizebox';
-  sb.innerHTML = '<button type="button" class="nt-iconbtn" data-s="-1" title="Küçült (Ctrl+Shift+<)"><svg class="nt-ic" viewBox="0 0 24 24" style="width:11px;height:11px"><path d="M5 12h14"/></svg></button>' +
-    '<input id="ntSize" value="12" inputmode="numeric" title="Yazı boyutu (pt)"><button type="button" class="nt-iconbtn" data-list="1" title="Boyut listesi">' + ni('chevdown', 11) + '</button>' +
-    '<button type="button" class="nt-iconbtn" data-s="1" title="Büyüt (Ctrl+Shift+>)">' + ni('plus', 11) + '</button>';
+  sb.innerHTML = '<button type="button" class="nt-iconbtn" data-s="-1" title="Küçült">' + ni('x', 10).replace(/<path[^>]*>/, '<path d="M5 12h14"/>') + '</button><input id="ntSize" value="12" inputmode="numeric" title="Yazı boyutu (pt)"><button type="button" class="nt-iconbtn" data-s="1" title="Büyüt">' + ni('plus', 10) + '</button>';
   tb.appendChild(sb);
-  sb.querySelectorAll('button').forEach(b => {
-    b.addEventListener('mousedown', e => e.preventDefault());
-    b.addEventListener('click', () => {
-      if (b.dataset.list){
-        if (nPop._anchor === b){ nClosePop(); return; }
-        const cur = nCurSize();
-        nShowPop('<div class="nt-sizes">' + [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72].map(n => '<button type="button" class="nt-mi' + (n === cur ? ' cur' : '') + '" data-n="' + n + '">' + n + '</button>').join('') + '</div>', b);
-        nPop.querySelectorAll('[data-n]').forEach(x => x.onclick = () => { nClosePop(); nSetSize(+x.dataset.n); });
-        return;
-      }
-      nSetSize((parseFloat($n('ntSize').value) || nCurSize()) + parseInt(b.dataset.s));
-    });
-  });
+  sb.querySelectorAll('button').forEach(b => { b.addEventListener('mousedown', e => e.preventDefault()); b.addEventListener('click', () => nSetSize((parseFloat($n('ntSize').value) || nCurSize()) + parseInt(b.dataset.s))); });
   $n('ntSize').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); nSetSize(parseFloat($n('ntSize').value) || 12); } });
   sep();
   add('bold', 'Kalın (Ctrl+B)', () => nExec('bold'), 'bold'); add('italic', 'İtalik (Ctrl+I)', () => nExec('italic'), 'italic');
@@ -4913,6 +4937,7 @@ function nBuildToolbar(){
   sep();
   add('quote', 'Alıntı', () => nBlock('BLOCKQUOTE')); add('code', 'Kod bloğu', nCodeBlock); add('hr', 'Yatay çizgi', nInsertHR);
   add('clear', 'Biçimlendirmeyi temizle (Ctrl+\\)', nClearFmt); add('search', 'Bul ve değiştir (Ctrl+F)', () => nFindOpen());
+  sep(); add('spell', 'Yazım ve dilbilgisi denetimi (LanguageTool)', nGramToggle).dataset.gram = '1'; nGramUI();
 }
 let nTbRaf = 0;
 function nToolbarSoon(){ cancelAnimationFrame(nTbRaf); nTbRaf = requestAnimationFrame(nToolbar); }
@@ -4950,7 +4975,8 @@ function nMenuItems(name){
   if (name === 'Düzen') return [
     I('undo', 'Geri al', () => nExec('undo'), 'Ctrl+Z'), I('redo', 'Yinele', () => nExec('redo'), 'Ctrl+Y'), S,
     I('cut', 'Kes', () => nExec('cut'), 'Ctrl+X'), I('copy', 'Kopyala', () => nExec('copy'), 'Ctrl+C'), I('select', 'Tümünü seç', () => nExec('selectAll'), 'Ctrl+A'), S,
-    I('search', 'Bul ve değiştir', () => nFindOpen(), 'Ctrl+F')];
+    I('search', 'Bul ve değiştir', () => nFindOpen(), 'Ctrl+F'), S,
+    I('spell', nGram.on ? 'Yazım/dilbilgisi denetimini kapat' : 'Yazım/dilbilgisi denetimini aç', nGramToggle)];
   if (name === 'Görünüm') return [
     I('outline', nShell.classList.contains('out-on') ? 'İçindekileri gizle' : 'İçindekileri göster', nToggleOutline),
     I('sidebar', nShell.classList.contains('side-off') ? 'Kenar çubuğunu göster' : 'Kenar çubuğunu gizle', () => nShell.classList.toggle('side-off')),
@@ -5036,7 +5062,7 @@ $n('ntJsonIn').addEventListener('change', async e => {
     for (const x of arr){
       if (!x || typeof x !== 'object') continue;
       const iso = new Date().toISOString();
-      const n = {id:x.id || nUid(), ders:(x.ders || 'Genel'), topic:(x.topic || 'Genel'), baslik:x.baslik || 'Başlıksız', icerik:nSanitize(x.icerik || '') || '<p><br></p>', sira:x.sira || Date.now(), olusturma:x.olusturma || iso, guncelleme:x.guncelleme || iso, yildiz:!!x.yildiz};
+      const n = {id:x.id || nUid(), ders:(x.ders || 'Genel'), topic:(x.topic || 'Genel'), baslik:x.baslik || 'Başlıksız', icerik:nSanitize(x.icerik || '') || '<p><br></p>', sira:x.sira || Date.now(), olusturma:x.olusturma || iso, guncelleme:x.guncelleme || iso, yildiz:!!x.yildiz, dil:x.dil || 'auto'};
       const old = nById(n.id); if (old){ n._path = old._path; nNotes[nNotes.indexOf(old)] = n; } else nNotes.push(n);
       n._lastTitle = n.baslik; nFolders.add(n.ders); nFolders.add(n.ders + '||' + n.topic);
       await NS.save(n); c++;
@@ -5264,10 +5290,141 @@ async function nQuietRescan(){
   }catch(e){}
 }
 
+
+// ---- Yazım & dilbilgisi denetimi (LanguageTool public API) ----
+// Not: LanguageTool Türkçe'yi desteklemez; İngilizce/Almanca vb. notlar için kullanılır. Metin api.languagetool.org'a gönderilir.
+const LT_URL = 'https://api.languagetool.org/v2/check';
+const LT_LANGS = [['auto','Otomatik algıla'],['en-US','English (US)'],['en-GB','English (UK)'],['de-DE','Deutsch'],['fr','Français'],['es','Español'],['it','Italiano'],['pt-PT','Português'],['nl','Nederlands'],['pl-PL','Polski'],['ru-RU','Русский'],['uk-UA','Українська']];
+NI.spell = '<path d="M3 18l4-10 4 10M4.5 14h5M13 15l3 3 6-7"/>';
+const nGram = {on:false, items:[], ctl:null, timer:null, last:0, ign:new Set(), warned:false};
+try{ nGram.on = localStorage.getItem('ntGram') === '1'; }catch(e){}
+$n('ntLang').innerHTML = LT_LANGS.map(l => '<option value="' + l[0] + '">' + l[1] + '</option>').join('');
+const nGramOK = () => !!(window.CSS && CSS.highlights && window.Highlight);
+function nGramInfo(t){ $n('ntGramCnt').textContent = t; }
+function nGramUI(){
+  const b = $n('ntToolbar').querySelector('[data-gram]'); if (b) b.classList.toggle('on', nGram.on);
+  $n('ntLang').style.display = nGram.on ? '' : 'none';
+  if (!nGram.on) nGramInfo('');
+}
+function nGramCollect(){
+  const segs = []; let txt = '', last = null, t;
+  const tw = document.createTreeWalker(nBody, NodeFilter.SHOW_TEXT, {acceptNode: x => (x.parentElement && x.parentElement.closest('pre,code')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+  while ((t = tw.nextNode())){
+    const b = t.parentElement.closest('p,h1,h2,h3,li,blockquote,td,th,div') || nBody;
+    if (b !== last && txt) txt += '\n';
+    last = b; segs.push({node:t, start:txt.length, len:t.nodeValue.length}); txt += t.nodeValue;
+  }
+  return {txt, segs};
+}
+function nGramRange(s, e, segs){
+  let a = null, b = null;
+  for (const g of segs){
+    if (!a && s >= g.start && s < g.start + g.len) a = [g.node, s - g.start];
+    if (!b && e > g.start && e <= g.start + g.len) b = [g.node, e - g.start];
+    if (a && b) break;
+  }
+  if (!a || !b) return null;
+  const r = document.createRange(); r.setStart(a[0], a[1]); r.setEnd(b[0], b[1]);
+  return r.collapsed ? null : r;
+}
+function nGramPaint(){
+  if (!nGramOK()) return;
+  nGram.items = nGram.items.filter(i => !i.range.collapsed && nBody.contains(i.range.startContainer));
+  CSS.highlights.delete('ntgram'); CSS.highlights.delete('ntgram2');
+  const sp = nGram.items.filter(i => i.spell).map(i => i.range), gr = nGram.items.filter(i => !i.spell).map(i => i.range);
+  if (sp.length) CSS.highlights.set('ntgram', new Highlight(...sp));
+  if (gr.length) CSS.highlights.set('ntgram2', new Highlight(...gr));
+}
+function nGramReset(){
+  clearTimeout(nGram.timer); if (nGram.ctl){ nGram.ctl.abort(); nGram.ctl = null; }
+  nGram.items = []; nGramPaint(); nGramInfo('');
+}
+function nGramSoon(ms){
+  if (!nGram.on || !nCur) return;
+  clearTimeout(nGram.timer);
+  const wait = ms || Math.max(1500, nGram.last + 3500 - Date.now()); // public API: dakikada 20 istek
+  nGram.timer = setTimeout(nGramRun, wait);
+}
+async function nGramRun(){
+  if (!nGram.on || !nCur || nGram.busy && false) return;
+  const n = nById(nCur), cur = nCur, lang = (n && n.dil) || 'auto';
+  const {txt} = nGramCollect();
+  if (txt.trim().length < 3){ nGram.items = []; nGramPaint(); nGramInfo(''); return; }
+  const sent = txt.length > 20000 ? txt.slice(0, 20000) : txt;
+  if (txt.length > 20000 && !nGram.warned){ nGram.warned = true; toast('Denetim en fazla 20.000 karakteri kontrol eder; fazlası atlandı.'); }
+  if (nGram.ctl) nGram.ctl.abort();
+  const ctl = nGram.ctl = new AbortController();
+  nGram.last = Date.now(); nGramInfo('Denetleniyor…');
+  const p = new URLSearchParams(); p.set('text', sent); p.set('language', lang);
+  if (lang === 'auto') p.set('preferredVariants', 'en-US,de-DE,pt-PT,ca-ES');
+  try{
+    const r = await fetch(LT_URL, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded', 'Accept':'application/json'}, body:p, signal:ctl.signal});
+    if (!r.ok){
+      if (r.status === 429){ nGramInfo('Dakikalık sınır doldu, biraz sonra tekrar denenecek'); nGramSoon(15000); return; }
+      throw new Error(((await r.text().catch(() => '')) || ('HTTP ' + r.status)).slice(0, 120));
+    }
+    const d = await r.json();
+    if (nCur !== cur || !nGram.on) return;
+    const now = nGramCollect();
+    if (now.txt !== txt){ nGramSoon(); return; }            // yazı değişmiş; sonuçlar eski
+    nGram.items = [];
+    (d.matches || []).forEach(m => {
+      const rg = nGramRange(m.offset, m.offset + m.length, now.segs); if (!rg) return;
+      const key = (m.rule && m.rule.id || '') + '|' + rg.toString(); if (nGram.ign.has(key)) return;
+      const id = (m.rule && m.rule.id) || '', it = m.rule && m.rule.issueType;
+      nGram.items.push({range:rg, m, key, spell: it === 'misspelling' || /MORFOLOGIK|SPELL|TYPO|HUNSPELL/i.test(id)});
+    });
+    nGramPaint();
+    const det = lang === 'auto' && d.language && d.language.detectedLanguage ? ' · ' + d.language.detectedLanguage.name : '';
+    nGramInfo((nGram.items.length ? nGram.items.length + ' öneri' : 'Sorun bulunamadı ✓') + det);
+  }catch(e){
+    if (e && e.name === 'AbortError') return;
+    nGramInfo('Denetim başarısız'); console.warn('LanguageTool:', e);
+  }
+}
+function nGramToggle(){
+  if (!nGramOK()){ toast('Tarayıcın bu özelliği desteklemiyor (güncel Chrome / Edge / Safari gerekir).'); return; }
+  nGram.on = !nGram.on; try{ localStorage.setItem('ntGram', nGram.on ? '1' : '0'); }catch(e){}
+  nGramUI();
+  if (nGram.on){ const n = nById(nCur); if (n) $n('ntLang').value = n.dil || 'auto'; nGramRun(); toast('Denetim açık: metnin api.languagetool.org\'a gönderilir', true); }
+  else nGramReset();
+}
+function nGramApply(it, rep){
+  nBody.focus(); const s = getSelection(); s.removeAllRanges(); s.addRange(it.range.cloneRange());
+  document.execCommand('insertText', false, rep);
+  nGram.items = nGram.items.filter(x => x !== it); nGramPaint();
+}
+function nGramAt(){
+  const s = getSelection(); if (!s.rangeCount || !s.isCollapsed || !nGram.items.length) return null;
+  const an = s.anchorNode, off = s.anchorOffset;
+  return nGram.items.find(i => { try{ return i.range.comparePoint(an, off) === 0; }catch(e){ return false; } }) || null;
+}
+function nGramPop(it){
+  const m = it.m, rect = it.range.getBoundingClientRect();
+  const reps = (m.replacements || []).slice(0, 5).map(x => x.value);
+  let h = '<div class="nt-mhead">' + escapeHtml((m.shortMessage || (m.rule && m.rule.description) || 'Öneri')) + '</div>' +
+    '<div style="padding:2px 10px 6px;font-size:12px;color:var(--text-dim);max-width:290px;line-height:1.45">' + escapeHtml(m.message || '') + '</div>';
+  reps.forEach((v, i) => { h += '<button type="button" class="nt-mi" data-r="' + i + '"><b>' + escapeHtml(v === '' ? '(sil)' : v) + '</b></button>'; });
+  h += '<div class="nt-msep"></div><button type="button" class="nt-mi" data-ig="1"><span>Yoksay</span></button>';
+  nShowPop(h, {getBoundingClientRect:() => rect, classList:{add(){}, remove(){}}});
+  nPop.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { nClosePop(); nGramApply(it, reps[+b.dataset.r]); });
+  const ig = nPop.querySelector('[data-ig]');
+  if (ig) ig.onclick = () => { nClosePop(); nGram.ign.add(it.key); nGram.items = nGram.items.filter(x => x !== it); nGramPaint(); };
+}
+nBody.addEventListener('click', e => {
+  if (!nGram.on || (e.target.closest && e.target.closest('a')) || e.target.tagName === 'IMG') return;
+  setTimeout(() => { const it = nGramAt(); if (it) nGramPop(it); }, 0);
+});
+nBody.addEventListener('input', () => { if (nGram.on) nGramSoon(); });
+$n('ntLang').addEventListener('change', e => {
+  const n = nById(nCur); if (!n) return;
+  n.dil = e.target.value; nScheduleSave(); nGram.ign.clear(); nGramRun();
+});
+
 // ---- Başlat ----
 (function(){
   document.execCommand('defaultParagraphSeparator', false, 'p');
-  nBuildToolbar(); nBuildMenubar();
+  nBuildToolbar(); nBuildMenubar(); nGramUI();
   try{
     const z = localStorage.getItem('ntZoom'); if (z) nZoom(z);
     if (localStorage.getItem('ntWide')) nPage.classList.add('wide');
@@ -5276,6 +5433,146 @@ async function nQuietRescan(){
   nInit().catch(e => { console.error(e); nGate('setup'); });
 })();
 
+
+// ---- Notlarım v3: ders renkleri, ana sayfa panosu, "/" blok menüsü, okuma çubuğu, üst bilgi ----
+function nColor(d){ const h = parseInt(nHash(d || ''), 36) % 360; return 'hsl(' + h + ',68%,58%)'; }
+function nAgo(iso){
+  const t = Date.parse(iso || ''); if (!t) return '';
+  const m = Math.floor((Date.now() - t) / 60000);
+  if (m < 1) return 'şimdi'; if (m < 60) return m + ' dk'; if (m < 1440) return Math.floor(m / 60) + ' sa';
+  if (m < 2880) return 'dün'; if (m < 10080) return Math.floor(m / 1440) + ' gün';
+  return new Date(t).toLocaleDateString('tr-TR', {day:'numeric', month:'short'});
+}
+function nDateL(iso){ const t = Date.parse(iso || ''); return t ? new Date(t).toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'}) : ''; }
+
+// Üst bilgi (ders › konu, tarihler) + sayfa rengi
+const nCrumbEl = document.createElement('div'); nCrumbEl.className = 'nt-crumb'; nCrumbEl.contentEditable = 'false'; nPage.insertBefore(nCrumbEl, nBody);
+const nProg = document.createElement('div'); nProg.className = 'nt-prog'; nProg.innerHTML = '<i></i>'; nCanvas.parentNode.insertBefore(nProg, nCanvas);
+function nCrumb(){
+  const n = nById(nCur); if (!n) return;
+  const c = nColor(n.ders); nPage.style.setProperty('--nt-c', c);
+  nCrumbEl.innerHTML = '<span class="pill"><i></i>' + escapeHtml(n.ders) + ' › ' + escapeHtml(n.topic) + '</span>' +
+    '<span>Oluşturuldu ' + escapeHtml(nDateL(n.olusturma)) + '</span><span>·</span><span>Son düzenleme ' + escapeHtml(nAgo(n.guncelleme)) + ' önce</span>';
+}
+nCanvas.addEventListener('scroll', () => {
+  const m = nCanvas.scrollHeight - nCanvas.clientHeight;
+  nProg.firstChild.style.width = (m > 0 ? Math.min(100, nCanvas.scrollTop / m * 100) : 0) + '%';
+});
+
+// Ağaç: renkli ders, zaman, "Son düzenlenenler"
+(function(){
+  const _rt = renderNotesTree;
+  renderNotesTree = function(){
+    _rt();
+    const w = $n('ntTree'); if (!w || nState !== 'ready' || nQuery.trim()) return;
+    w.querySelectorAll('.nt-row.ders').forEach(r => {
+      const ic = r.querySelector('svg:not(.nt-caret)'); if (ic) ic.style.color = nColor(nDec(r.dataset.d));
+    });
+    w.querySelectorAll('.nt-row.doc').forEach(r => {
+      const n = nById(r.dataset.id); if (!n) return;
+      const l = r.querySelector('.nt-lbl'); if (l && !r.querySelector('.nt-time')) l.insertAdjacentHTML('afterend', '<span class="nt-time">' + escapeHtml(nAgo(n.guncelleme)) + '</span>');
+      const ic = r.querySelector('svg'); if (ic && !n.yildiz) ic.style.color = nColor(n.ders);
+    });
+    if (nNotes.length > 3 && !w.querySelector('.nt-recent')){
+      const rec = nNotes.slice().sort((a, b) => (b.guncelleme || '').localeCompare(a.guncelleme || '')).slice(0, 3);
+      const box = document.createElement('div'); box.className = 'nt-recent';
+      box.innerHTML = '<div class="nt-sec">Son düzenlenenler</div>' + rec.map(n => nDocRow(n)).join('');
+      const favSec = Array.from(w.querySelectorAll('.nt-sec')).find(x => x.textContent === 'Favoriler');
+      if (favSec){ let e = favSec; while (e.nextElementSibling && !e.nextElementSibling.classList.contains('nt-sec')) e = e.nextElementSibling; e.after(box); }
+      else w.prepend(box);
+      box.querySelectorAll('.nt-row.doc').forEach(r => { const n = nById(r.dataset.id); const ic = r.querySelector('svg'); if (ic && n && !n.yildiz) ic.style.color = nColor(n.ders); });
+    }
+    nHome(); nCrumb();
+  };
+  const _op = nOpen;
+  nOpen = async function(){ await _op.apply(this, arguments); nCrumb(); };
+})();
+
+// Ana sayfa panosu
+function nHome(){
+  const el = $n('ntEmpty'); if (!el || el.style.display === 'none' || nState !== 'ready') return;
+  const notes = nNotes.slice().sort((a, b) => (b.guncelleme || '').localeCompare(a.guncelleme || ''));
+  const g = nGroup(); let words = 0;
+  notes.forEach(n => { const t = nPlain(n.icerik); n._w = t ? t.split(' ').length : 0; n._s = t; words += n._w; });
+  const hr = new Date().getHours(), hi = hr < 6 ? 'İyi geceler' : hr < 12 ? 'Günaydın' : hr < 18 ? 'İyi çalışmalar' : 'İyi akşamlar';
+  let h = '<div class="nh"><div class="nh-hero"><h2>' + hi + ' 👋<small>' + (notes.length ? 'Kaldığın yerden devam et ya da yeni bir not başlat.' : 'İlk dersini oluştur, notlar burada görünsün.') + '</small></h2>' +
+    '<button class="nt-btn primary" data-x="newdoc">' + ni('plus') + ' Yeni doküman</button><button class="nt-btn" data-x="newders">' + ni('folder') + ' Yeni ders</button></div>' +
+    '<div class="nh-stats"><div class="nh-stat"><b>' + notes.length + '</b><span>doküman</span></div><div class="nh-stat"><b>' + g.size + '</b><span>ders</span></div>' +
+    '<div class="nh-stat"><b>' + notes.filter(n => n.yildiz).length + '</b><span>favori</span></div><div class="nh-stat"><b>' + words.toLocaleString('tr-TR') + '</b><span>kelime</span></div></div>';
+  if (notes.length){
+    h += '<div class="nh-h">Son düzenlenenler</div><div class="nh-grid">' + notes.slice(0, 6).map(n =>
+      '<button class="nh-card" data-id="' + escAttr(n.id) + '" style="--c:' + nColor(n.ders) + '"><span class="p">' + escapeHtml(n.ders + ' › ' + n.topic) + '</span><b>' + (n.yildiz ? '⭐ ' : '') + escapeHtml(n.baslik || 'Başlıksız') + '</b>' +
+      '<span class="s">' + escapeHtml((n._s || 'Boş doküman').slice(0, 130)) + '</span><span class="m">' + escapeHtml(nAgo(n.guncelleme)) + ' · ' + n._w + ' kelime</span></button>').join('') + '</div>';
+    h += '<div class="nh-h">Derslerim</div><div class="nh-chips">' + Array.from(g.keys()).sort((a, b) => a.localeCompare(b, 'tr')).map(d => {
+      let c = 0; g.get(d).forEach(a => c += a.length);
+      return '<button class="nh-chip" data-d="' + nEnc(d) + '" style="--c:' + nColor(d) + '"><i></i>' + escapeHtml(d) + ' <em>' + c + '</em></button>';
+    }).join('') + '</div>';
+  }
+  h += '<div class="nh-h">Kısayollar</div><div class="nt-tips"><kbd>/</kbd><span>Boş satırda blok menüsü (başlık, tablo, ipucu kutusu…)</span><kbd>Ctrl+K</kbd><span>Bağlantı</span><kbd>Ctrl+F</kbd><span>Bul ve değiştir</span><kbd>Ctrl+S</kbd><span>Hemen kaydet</span><kbd>[] + boşluk</kbd><span>Yapılacaklar listesi</span></div></div>';
+  el.innerHTML = h;
+}
+$n('ntEmpty').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.id) return nOpen(b.dataset.id);
+  if (b.dataset.d){ const d = nDec(b.dataset.d); nOpenSt[d] = true; nSaveOpen(); nShell.classList.remove('side-off'); renderNotesTree(); return; }
+  if (b.dataset.x === 'newders') return nNewDers();
+  if (b.dataset.x === 'newdoc'){ const c = nById(localStorage.getItem('ntLast')); if (c) nNewDoc(c.ders, c.topic); else nNewDers(); }
+});
+
+// "/" blok menüsü
+const nSlashEl = document.createElement('div'); nSlashEl.className = 'nt-slash'; document.body.appendChild(nSlashEl);
+const nSl = {open:false, block:null, items:[], i:0};
+const N_SLASH = [
+  ['Yazı', '📝', 'Başlık 1', 'Büyük bölüm başlığı', () => nBlock('H1')], ['Yazı', '📝', 'Başlık 2', 'Orta başlık', () => nBlock('H2')], ['Yazı', '📝', 'Başlık 3', 'Küçük başlık', () => nBlock('H3')],
+  ['Liste', '•', 'Madde işaretli liste', '', () => nExec('insertUnorderedList')], ['Liste', '1.', 'Numaralı liste', '', () => nExec('insertOrderedList')], ['Liste', '☑️', 'Yapılacaklar', 'Tıklanabilir kutular', () => nTodo()],
+  ['Kutular', 'ℹ️', 'Bilgi kutusu', '', () => nCallout('info')], ['Kutular', '💡', 'İpucu kutusu', '', () => nCallout('tip')], ['Kutular', '⚠️', 'Uyarı kutusu', '', () => nCallout('warn')], ['Kutular', '❗', 'Önemli kutusu', 'Sınavda çıkar!', () => nCallout('imp')],
+  ['Ekle', '❝', 'Alıntı', '', () => nBlock('BLOCKQUOTE')], ['Ekle', '</>', 'Kod bloğu', '', () => nBlock('PRE')], ['Ekle', '▦', 'Tablo', '', () => nTableDialog()],
+  ['Ekle', '🖼️', 'Görsel', 'Bilgisayardan yükle', () => $n('ntImgIn').click()], ['Ekle', '―', 'Ayırıcı çizgi', '', () => nInsertHR()],
+  ['Ekle', '📅', 'Bugünün tarihi', '', () => nInsertText(new Date().toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric', weekday:'long'}))]
+];
+function nSlashClose(){ nSl.open = false; nSlashEl.style.display = 'none'; }
+function nSlashRender(){
+  const q = nTr(nSl.q || '');
+  nSl.items = N_SLASH.filter(x => !q || nTr(x[2]).includes(q) || nTr(x[0]).includes(q));
+  if (!nSl.items.length){ nSlashClose(); return; }
+  nSl.i = Math.min(nSl.i, nSl.items.length - 1);
+  let h = '', last = '';
+  nSl.items.forEach((x, i) => {
+    if (x[0] !== last){ h += '<div class="h">' + x[0] + '</div>'; last = x[0]; }
+    h += '<button type="button" data-i="' + i + '" class="' + (i === nSl.i ? 'on' : '') + '"><span class="ico">' + x[1] + '</span><span>' + escapeHtml(x[2]) + (x[3] ? '<small>' + escapeHtml(x[3]) + '</small>' : '') + '</span></button>';
+  });
+  nSlashEl.innerHTML = h; nSlashEl.style.display = 'block'; nSl.open = true;
+  const s = getSelection(); let r = s.rangeCount ? s.getRangeAt(0).getBoundingClientRect() : null;
+  if (!r || (!r.height && !r.top)) r = nSl.block.getBoundingClientRect();
+  let top = r.bottom + 6; if (top + nSlashEl.offsetHeight > innerHeight - 8) top = Math.max(8, r.top - nSlashEl.offsetHeight - 6);
+  nSlashEl.style.top = top + 'px'; nSlashEl.style.left = Math.min(Math.max(8, r.left), innerWidth - 280) + 'px';
+  const on = nSlashEl.querySelector('.on'); if (on) on.scrollIntoView({block:'nearest'});
+}
+function nSlashRun(i){
+  const it = nSl.items[i]; if (!it) return;
+  const b = nSl.block; nSlashClose();
+  const r = document.createRange(); r.selectNodeContents(b);
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  document.execCommand('delete');
+  if (s.rangeCount) nRange = s.getRangeAt(0).cloneRange();
+  it[4]();
+}
+nSlashEl.addEventListener('mousedown', e => { e.preventDefault(); const b = e.target.closest('button[data-i]'); if (b) nSlashRun(+b.dataset.i); });
+nBody.addEventListener('input', () => {
+  const s = getSelection(); if (!s.rangeCount || !s.isCollapsed || !nIn(s.anchorNode)){ nSlashClose(); return; }
+  const b = nBlockOf(s.anchorNode), m = b && /^\/([^\s\/]{0,14})$/.exec(b.textContent);
+  if (!m){ nSlashClose(); return; }
+  if (!nSl.open || nSl.block !== b) nSl.i = 0;
+  nSl.block = b; nSl.q = m[1]; nSlashRender();
+});
+nBody.addEventListener('keydown', e => {
+  if (!nSl.open) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); e.stopImmediatePropagation(); nSl.i = (nSl.i + (e.key === 'ArrowDown' ? 1 : -1) + nSl.items.length) % nSl.items.length; nSlashRender(); }
+  else if (e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); e.stopImmediatePropagation(); nSlashRun(nSl.i); }
+  else if (e.key === 'Escape'){ e.preventDefault(); e.stopImmediatePropagation(); nSlashClose(); }
+}, true);
+nBody.addEventListener('blur', () => setTimeout(nSlashClose, 120));
+nCanvas.addEventListener('scroll', nSlashClose);
 
 // ---- Pane switching (Takvim / İstatistikler / Checklist / Notlarım) ----
 function switchPane(pane){
