@@ -1395,6 +1395,159 @@ def kelime_kaydi_hazirla(d):
     }
 
 
+KELIME_AI_MAX_HATA = 3        # bir kelime üst üste bu kadar başarısız olursa otomatik denemeler durur (elle yenilenebilir)
+KELIME_AI_PARTI = 4           # tek Gemini çağrısında incelenecek kelime sayısı
+_kelime_ai_kilit = threading.Lock()
+
+KELIME_AI_SISTEM = (
+    "Sen deneyimli bir dil öğretmenisin. Öğrenci Türkçe konuşuyor ve kelime defterine eklediği kelimeleri "
+    "köküne kadar öğrenmek istiyor. Girdi JSON: {\"kelimeler\":[{\"i\":0,\"kelime\":...,\"ceviri\":...,\"dil\":...,\"hedef\":...}]}. "
+    "'kelime' kaynak dildeki sözcük ya da ifade (dil kodu: en, de, tr...), 'ceviri' programın verdiği çeviridir. "
+    "Her kelime için SADECE şu JSON'u döndür: {\"sonuclar\":[{...}]}. Her sonuç nesnesinin alanları: "
+    "i (girdideki sayı, aynen), "
+    "kok (sözlük başı / kök biçim; çekimli ya da türemiş kelimede kökü, ifadede ana sözcüğü), "
+    "kok_anlam (kökün Türkçe anlamı, kısa), "
+    "tur (Türkçe sözcük türü: isim, fiil, sıfat, zarf, deyim...), "
+    "okunus (İngilizce için IPA, diğer diller için basit okunuş), "
+    "cogul (isimse çoğul hali; Almancada artikelle, örn. 'die Häuser'; sayılamayan/uygunsuzsa \"\"), "
+    "ekler (kelimedeki ön ek ve son ekler: [{\"ek\":\"un-\",\"tur\":\"ön ek\",\"anlam\":\"olumsuzluk\"}]; yoksa []), "
+    "formlar (önemli çekim/türev biçimler: fiilde geçmiş zaman, geçmiş ortaç, -ing, 3. tekil; sıfatta karşılaştırma ve üstünlük; "
+    "Almancada artikel, Präteritum, Partizip II; Türkçede önemli çekimler: [{\"ad\":\"geçmiş zaman\",\"deger\":\"went\"}]), "
+    "es_anlamlilar (en çok 4, kaynak dilde), zit_anlamlilar (en çok 3, kaynak dilde), "
+    "aile (kelime ailesi: aynı kökten en çok 5 sözcük, örn. 'happiness (isim)'), "
+    "seviye (A1, A2, B1, B2, C1 ya da C2; emin değilsen \"\"), "
+    "ornekler (en çok 2: [{\"cumle\":\"kaynak dilde basit cümle\",\"tr\":\"Türkçesi\"}]), "
+    "ipucu (Türkçe, en çok 140 karakter: akılda tutma yolu, benzer kelimeyle karışma uyarısı ya da kullanım notu; yoksa \"\"), "
+    "duzeltme (verilen çeviri bu sözcük için yanlış ya da çok yanıltıcıysa doğrusunu Türkçe açıkla; doğruysa \"\"). "
+    "Kurallar: Uydurma, emin olmadığın alanı boş bırak (\"\" ya da []). Kaynak Türkçe ise kök ve ekleri Türkçe sözcük yapısına göre ver. "
+    "Çoğul/forms alanlarını yalnızca o sözcük türüne uygunsa doldur. Açıklamalar Türkçe, örnek cümleler kaynak dilde olsun."
+)
+
+
+def _liste_temiz(v, n_oge, n_uzun):
+    if not isinstance(v, list):
+        return []
+    cikti = []
+    for x in v:
+        t = _metin(x, n_uzun)
+        if t:
+            cikti.append(t)
+        if len(cikti) >= n_oge:
+            break
+    return cikti
+
+
+def kelime_ai_temizle(v):
+    """Gemini çıktısını sınırlayıp temizler (Firestore'a güvenle yazılsın diye)."""
+    if not isinstance(v, dict):
+        return None
+    ekler = [{"ek": _metin(e.get("ek"), 20), "tur": _metin(e.get("tur"), 20), "anlam": _metin(e.get("anlam"), 80)}
+             for e in (v.get("ekler") or [])[:6] if isinstance(e, dict) and _metin(e.get("ek"), 20)]
+    formlar = [{"ad": _metin(f.get("ad"), 40), "deger": _metin(f.get("deger"), 80)}
+               for f in (v.get("formlar") or [])[:8] if isinstance(f, dict) and _metin(f.get("deger"), 80)]
+    ornekler = [{"cumle": _metin(o.get("cumle"), 250), "tr": _metin(o.get("tr"), 250)}
+                for o in (v.get("ornekler") or [])[:2] if isinstance(o, dict) and _metin(o.get("cumle"), 250)]
+    seviye = _metin(v.get("seviye"), 3).upper()
+    if seviye not in ("A1", "A2", "B1", "B2", "C1", "C2"):
+        seviye = ""
+    return {
+        "kok": _metin(v.get("kok"), 80), "kok_anlam": _metin(v.get("kok_anlam"), 100),
+        "tur": _metin(v.get("tur"), 30), "okunus": _metin(v.get("okunus"), 80),
+        "cogul": _metin(v.get("cogul"), 80), "ekler": ekler, "formlar": formlar,
+        "es_anlamlilar": _liste_temiz(v.get("es_anlamlilar"), 4, 60),
+        "zit_anlamlilar": _liste_temiz(v.get("zit_anlamlilar"), 3, 60),
+        "aile": _liste_temiz(v.get("aile"), 5, 80),
+        "seviye": seviye, "ornekler": ornekler,
+        "ipucu": _metin(v.get("ipucu"), 200), "duzeltme": _metin(v.get("duzeltme"), 200),
+    }
+
+
+def kelime_ai_isle(belgeler, butce=40):
+    """belgeler: [(doc_id, dict)]. Gemini ile inceler, sonucu belgenin 'ai' alanına yazar.
+    Başarıyla işlenen doc_id'lerin kümesini döner. Gemini hatalarını (GeminiHata) yukarı fırlatır."""
+    if not GEMINI_API_KEY:
+        raise GeminiHata("GEMINI_API_KEY tanımlı değil.", 503)
+    if not belgeler:
+        return set()
+    girdi = [{"i": i, "kelime": v.get("kelime") or "", "ceviri": v.get("ceviri") or "",
+              "dil": v.get("dil") or "", "hedef": v.get("hedef") or ""} for i, (_, v) in enumerate(belgeler)]
+    ham = gemini_uret(KELIME_AI_SISTEM, json.dumps({"kelimeler": girdi}, ensure_ascii=False), json_cikti=True,
+                      max_token=min(1800 * len(belgeler), 8000), sicaklik=0.2, timeout=40, butce=butce)
+    veri = json_ayikla(ham)
+    sonuclar = veri.get("sonuclar") if isinstance(veri, dict) else None
+    if not isinstance(sonuclar, list):
+        raise GeminiHata("Gemini kelime yanıtı çözümlenemedi.", 502)
+    zaman = datetime.utcnow().strftime(ZAMAN_FORMAT_SANIYE)
+    islenen = set()
+    for r in sonuclar:
+        i = r.get("i") if isinstance(r, dict) else None
+        if not isinstance(i, int) or not (0 <= i < len(belgeler)):
+            continue
+        ai = kelime_ai_temizle(r)
+        if not ai:
+            continue
+        doc_id = belgeler[i][0]
+        db.collection("kelimeler").document(doc_id).update({"ai": ai, "ai_zaman": zaman})
+        islenen.add(doc_id)
+    return islenen
+
+
+def kelime_ai_arka_plan(belgeler=None, adet=KELIME_AI_PARTI):
+    """Arka planda çalışır, aynı anda tek iş. belgeler verilmezse AI'sı olmayan en yeni kelimeleri bulup işler
+    (eski kelimelerin tamamlanması ve başarısız denemelerin yeniden denenmesi bu yolla olur)."""
+    def _is():
+        if not GEMINI_API_KEY or not _kelime_ai_kilit.acquire(blocking=False):
+            return
+        try:
+            liste = belgeler
+            if liste is None:
+                tum = [(d.id, d.to_dict() or {}) for d in db.collection("kelimeler").stream()]
+                liste = [(i, v) for i, v in tum if not v.get("ai") and (v.get("ai_hata") or 0) < KELIME_AI_MAX_HATA]
+                liste.sort(key=lambda x: x[1].get("eklenme") or "", reverse=True)   # yeniler önce
+                liste = liste[:adet]
+            if not liste:
+                return
+            islenen = set()
+            try:
+                islenen = kelime_ai_isle(liste)
+            except GeminiHata as e:
+                print(f"[Kelime AI] {e}")
+                if e.kod in (429, 503, 504):   # kota/zaman aşımı kelimenin suçu değil: hata sayacı artmasın
+                    return
+            except Exception as e:
+                print(f"[Kelime AI] beklenmeyen hata: {e}")
+            for doc_id, v in liste:
+                if doc_id not in islenen:
+                    try:
+                        db.collection("kelimeler").document(doc_id).update({"ai_hata": (v.get("ai_hata") or 0) + 1})
+                    except Exception:
+                        pass
+        finally:
+            _kelime_ai_kilit.release()
+    threading.Thread(target=_is, daemon=True).start()
+
+
+@app.route("/api/kelime/yenile", methods=["POST"])
+def api_kelime_yenile():
+    """Uygulamadaki 'AI' düğmesi: tek kelimeyi yapay zekayla yeniden inceler."""
+    if not _app_yetkili():
+        return "Forbidden", 403
+    doc_id = _metin((request.get_json(silent=True) or {}).get("id"), 40)
+    if not doc_id:
+        return jsonify({"status": "error", "detay": "id gerekli"}), 400
+    snap = db.collection("kelimeler").document(doc_id).get()
+    if not snap.exists:
+        return jsonify({"status": "error", "detay": "kelime bulunamadı"}), 404
+    try:
+        islenen = kelime_ai_isle([(doc_id, snap.to_dict() or {})], butce=25)
+    except GeminiHata as e:
+        return jsonify({"status": "error", "detay": str(e)}), e.kod
+    if doc_id not in islenen:
+        return jsonify({"status": "error", "detay": "AI bu kelime için sonuç üretemedi."}), 502
+    db.collection("kelimeler").document(doc_id).update({"ai_hata": 0})
+    return jsonify({"status": "ok"})
+
+
 @app.route("/api/kelime", methods=["POST"])
 def api_kelime_ekle():
     if not _app_yetkili():
@@ -1406,6 +1559,7 @@ def api_kelime_ekle():
     if ref.get().exists:
         return jsonify({"status": "ok", "yeni": False})
     ref.set(kayit)
+    kelime_ai_arka_plan([(ref.id, kayit)])   # yanıt gecikmesin; AI arka planda ekler
     return jsonify({"status": "ok", "yeni": True})
 
 
@@ -1422,6 +1576,18 @@ def kelime_mesaji(secilen, baslik):
     satirlar = [f"<b>{e(baslik)}</b>", ""]
     for n, (_, v) in enumerate(secilen, 1):
         satirlar.append(f"<b>{n}. {e(v.get('kelime') or '')}</b> → {e(v.get('ceviri') or '')}")
+        ai = v.get("ai") or {}
+        bilgi = []
+        if ai.get("kok") and ai["kok"].strip().lower() != (v.get("kelime") or "").strip().lower():
+            bilgi.append(f"kök: {ai['kok']}")
+        if ai.get("cogul"):
+            bilgi.append(f"çoğul: {ai['cogul']}")
+        for f in (ai.get("formlar") or [])[:3]:
+            if ai.get("cogul") and (f.get("ad") or "").strip().lower() == "çoğul":
+                continue   # çoğul zaten yukarıda yazıldı
+            bilgi.append(f"{f.get('ad') or 'form'}: {f.get('deger')}")
+        if bilgi:
+            satirlar.append("    🌱 " + e(" · ".join(bilgi)))
         sozluk = v.get("sozluk") or []
         if sozluk:
             anlam = ", ".join((sozluk[0].get("anlamlar") or [])[:4])
@@ -1430,6 +1596,8 @@ def kelime_mesaji(secilen, baslik):
         ornekler = v.get("ornekler") or []
         if ornekler:
             satirlar.append(f"    › {e(ornekler[0][:160])}")
+        if ai.get("ipucu"):
+            satirlar.append(f"    💡 {e(ai['ipucu'][:160])}")
         satirlar.append("")
     return "\n".join(satirlar).strip()
 
@@ -1856,6 +2024,11 @@ def check_assignments():
     except Exception as e:
         print(f"Günlük kelime hatası: {e}")
         kelime_gonderilen = 0
+
+    try:
+        kelime_ai_arka_plan()   # AI'sı eksik kelimeleri (eskiler, başarısız olanlar) tamamlar
+    except Exception as e:
+        print(f"Kelime AI başlatılamadı: {e}")
 
     return jsonify({
         "status": "ok",

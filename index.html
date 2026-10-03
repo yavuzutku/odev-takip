@@ -853,6 +853,16 @@
   .kl-act{display:flex;gap:6px;}
   .kl-act button{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:8px;padding:4px 9px;font-size:11.5px;cursor:pointer;font-family:var(--sans);}
   .kl-act button:hover{color:var(--text);border-color:var(--border-hover);}
+  .kl-act button:disabled{opacity:.5;cursor:default;}
+  .kl-chips{display:flex;gap:5px;flex-wrap:wrap;}
+  .kl-chip{font-size:10.5px;padding:2px 7px;border-radius:999px;border:1px solid var(--border);color:var(--text-dim);}
+  .kl-chip.lv{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;}
+  .kl-more summary{cursor:pointer;font-size:12px;color:var(--accent);margin-top:2px;user-select:none;}
+  .kl-ai{display:flex;flex-direction:column;gap:5px;margin-top:6px;font-size:12.5px;color:var(--text-dim);}
+  .kl-ai b{font-size:10.5px;color:var(--text-faint);letter-spacing:.05em;margin-right:5px;text-transform:uppercase;}
+  .kl-tip{color:var(--text);}
+  .kl-warn{color:var(--danger);}
+  .kl-ai-wait{font-size:11.5px;color:var(--text-faint);}
 </style>
 </head>
 <body>
@@ -1341,7 +1351,7 @@ const notlarRef = collection(db, "notlar");
 
 // Sunucudaki APP_API_TOKEN / WEBHOOK_VERIFY_TOKEN ile aynı olmalı.
 // Ortam değişkenlerinden birini özelleştirdiysen burayı da güncelle.
-const APP_API_TOKEN = "odevtakip123";
+const APP_API_TOKEN = "12345";
 async function sendAppNotify(text){
   try{
     await fetch("/api/notify", {
@@ -5628,6 +5638,44 @@ function kelimeTarih(s){
   return isNaN(d) ? "" : d.toLocaleDateString("tr-TR", {day:"numeric", month:"short"});
 }
 
+const kelimeAcik = new Set();   // açık bırakılan "Kök, ekler, formlar" kartları (yenilemede kapanmasın)
+
+function kelimeAiHtml(a){
+  const esc = escapeHtml;
+  const sat = [];
+  if (a.kok) sat.push("<div><b>Kök</b>" + esc(a.kok) + (a.kok_anlam ? " — " + esc(a.kok_anlam) : "") + "</div>");
+  if (a.cogul) sat.push("<div><b>Çoğul</b>" + esc(a.cogul) + "</div>");
+  if ((a.ekler || []).length) sat.push("<div><b>Ekler</b>" + a.ekler.map(e =>
+    esc(e.ek) + (e.anlam ? " (" + esc(e.anlam) + ")" : "")).join(" · ") + "</div>");
+  if ((a.formlar || []).length) sat.push("<div><b>Formlar</b>" + a.formlar.map(f =>
+    (f.ad ? esc(f.ad) + ": " : "") + "<i>" + esc(f.deger) + "</i>").join(" · ") + "</div>");
+  if ((a.es_anlamlilar || []).length) sat.push("<div><b>Eş anlamlı</b>" + a.es_anlamlilar.map(esc).join(", ") + "</div>");
+  if ((a.zit_anlamlilar || []).length) sat.push("<div><b>Zıt anlamlı</b>" + a.zit_anlamlilar.map(esc).join(", ") + "</div>");
+  if ((a.aile || []).length) sat.push("<div><b>Kelime ailesi</b>" + a.aile.map(esc).join(" · ") + "</div>");
+  (a.ornekler || []).forEach(o => sat.push('<div class="kl-ex">› ' + esc(o.cumle) + (o.tr ? "<br>&nbsp;&nbsp;" + esc(o.tr) : "") + "</div>"));
+  if (a.ipucu) sat.push('<div class="kl-tip">💡 ' + esc(a.ipucu) + "</div>");
+  if (a.duzeltme) sat.push('<div class="kl-warn">⚠️ ' + esc(a.duzeltme) + "</div>");
+  return '<div class="kl-ai">' + (sat.join("") || "<div>Ek bilgi bulunamadı.</div>") + "</div>";
+}
+
+async function kelimeAiYenile(id, btn){
+  const eski = btn.textContent;
+  btn.disabled = true; btn.textContent = "…";
+  try{
+    const r = await fetch("/api/kelime/yenile", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-App-Token": APP_API_TOKEN},
+      body: JSON.stringify({id})
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.detay || ("HTTP " + r.status));
+    toast("Yapay zeka güncelledi ✨", true);
+  }catch(err){
+    toast("AI hatası: " + String((err && err.message) || err).slice(0, 90), false, 3200);
+  }
+  btn.disabled = false; btn.textContent = eski;
+}
+
 function renderKelimeler(){
   const grid = document.getElementById("kelimeGrid");
   if (!grid) return;
@@ -5638,7 +5686,9 @@ function renderKelimeler(){
     if (kelimeFiltre === "ogrenilmedi" && k.ogrenildi) return false;
     if (kelimeFiltre === "ogrenildi" && !k.ogrenildi) return false;
     if (!q) return true;
-    return ((k.kelime || "") + " " + (k.ceviri || "")).toLocaleLowerCase("tr").includes(q);
+    const a = k.ai || {};
+    const ekstra = (a.kok || "") + " " + (a.cogul || "") + " " + (a.formlar || []).map(f => f.deger).join(" ");
+    return ((k.kelime || "") + " " + (k.ceviri || "") + " " + ekstra).toLocaleLowerCase("tr").includes(q);
   });
   if (!liste.length){
     grid.innerHTML = '<div class="field-hint" style="grid-column:1/-1;"><span>' +
@@ -5650,13 +5700,24 @@ function renderKelimeler(){
       '<div class="kl-tur"><b>' + escapeHtml(t.tur || "") + "</b>" + escapeHtml((t.anlamlar || []).slice(0, 5).join(" · ")) + "</div>").join("");
     const ornek = (k.ornekler || [])[0];
     const dilEtiketi = k.dil ? '<span class="kl-lang">' + escapeHtml(k.dil + (k.hedef ? " → " + k.hedef : "")) + "</span>" : "";
+    const a = k.ai || null;
+    const chips = a ? '<div class="kl-chips">' +
+      (a.tur ? '<span class="kl-chip">' + escapeHtml(a.tur) + "</span>" : "") +
+      (a.seviye ? '<span class="kl-chip lv">' + escapeHtml(a.seviye) + "</span>" : "") +
+      (a.okunus ? '<span class="kl-chip">' + escapeHtml(a.okunus) + "</span>" : "") + "</div>" : "";
+    const acik = kelimeAcik.has(k.id) ? " open" : "";
+    const ai = a ? '<details class="kl-more" data-id="' + escAttr(k.id) + '"' + acik + "><summary>Kök, ekler, formlar</summary>" + kelimeAiHtml(a) + "</details>"
+                 : '<div class="kl-ai-wait">⏳ Yapay zeka inceliyor… kısa süre içinde eklenir</div>';
     return '<div class="kl-card' + (k.ogrenildi ? " ok" : "") + '">' +
       '<div class="kl-word">' + escapeHtml(k.kelime || "") + dilEtiketi + "</div>" +
       '<div class="kl-tr">' + escapeHtml(k.ceviri || "") + "</div>" +
+      chips +
       turler +
       (ornek ? '<div class="kl-ex">› ' + escapeHtml(ornek) + "</div>" : "") +
+      ai +
       '<div class="kl-meta"><span>' + escapeHtml(kelimeTarih(k.eklenme)) + (k.gonderim_sayisi ? " · " + k.gonderim_sayisi + "× tekrar" : "") + "</span>" +
-      '<span class="kl-act"><button type="button" data-kl="ogren" data-id="' + escAttr(k.id) + '">' + (k.ogrenildi ? "↺ Geri al" : "✓ Öğrendim") + "</button>" +
+      '<span class="kl-act"><button type="button" data-kl="ai" data-id="' + escAttr(k.id) + '" title="Yapay zekayla yeniden incele">✨</button>' +
+      '<button type="button" data-kl="ogren" data-id="' + escAttr(k.id) + '">' + (k.ogrenildi ? "↺ Geri al" : "✓ Öğrendim") + "</button>" +
       '<button type="button" data-kl="sil" data-id="' + escAttr(k.id) + '" title="Sil">🗑</button></span></div>' +
       "</div>";
   }).join("");
@@ -5673,10 +5734,15 @@ document.querySelectorAll("#kelimeFiltre .kl-f").forEach(b => b.addEventListener
   document.querySelectorAll("#kelimeFiltre .kl-f").forEach(x => x.classList.toggle("active", x === b));
   renderKelimeler();
 }));
+document.getElementById("kelimeGrid").addEventListener("toggle", (e) => {
+  const d = e.target;
+  if (d && d.tagName === "DETAILS" && d.dataset.id){ d.open ? kelimeAcik.add(d.dataset.id) : kelimeAcik.delete(d.dataset.id); }
+}, true);
 document.getElementById("kelimeGrid").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-kl]");
   if (!b) return;
   const id = b.dataset.id;
+  if (b.dataset.kl === "ai"){ kelimeAiYenile(id, b); return; }
   try{
     if (b.dataset.kl === "ogren"){
       const k = kelimeler.find(x => x.id === id);
