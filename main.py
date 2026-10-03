@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import os
+import random
 import re
 import threading
 import time
@@ -11,6 +12,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from flask import Flask, jsonify, render_template, request, send_from_directory
 import requests
+from html import escape as html_escape
 
 app = Flask(__name__, template_folder=".")
 
@@ -391,6 +393,7 @@ def yardim_metni():
         "📅 *gun* – bugünkü ödevler\n"
         "🗓️ *hafta* – bu haftaki ödevler\n"
         "📋 *hepsi* – tüm bekleyen ödevler\n"
+        "📚 *kelime* – kelime tekrarı (her gün otomatik de gelir)\n"
         "❓ *yardim* – bu mesaj\n\n"
         "✨ Serbest yazabilirsin: _\"yarın 15:00 matematik ödevi ekle\"_, _\"bu hafta ne var?\"_, _\"almanca ödevini bitirdim\"_\n\n"
         "Hatırlatma mesajındaki *Ertele* butonuyla bir ödevi 30 dk, 1 saat ya da yarına erteleyebilirsin."
@@ -1354,6 +1357,135 @@ def api_hafta():
     return jsonify({"status": "ok", "odevler": liste})
 
 
+# ============================ KELİMELER (çeviri programından) ============================
+# Çeviri programı kelimeleri POST /api/kelime ile gönderir -> Firestore 'kelimeler' koleksiyonu.
+# Uygulamadaki "Kelimeler" sekmesi bu koleksiyonu canlı okur; günde bir kez Telegram'a tekrar listesi gider.
+KELIME_GUNLUK_ADET = int(os.environ.get("KELIME_GUNLUK_ADET", "5"))   # günlük mesajdaki kelime sayısı
+KELIME_SAAT = int(os.environ.get("KELIME_SAAT", "17"))                # yerel saat; bu saatten sonraki ilk kontrolde gider
+
+
+def _kelime_id(kelime, dil):
+    ham = f"{kelime.strip().lower()}|{(dil or '').strip().lower()}"
+    return hashlib.sha1(ham.encode("utf-8")).hexdigest()[:20]
+
+
+def kelime_kaydi_hazirla(d):
+    """İstekten gelen veriyi temizler; geçersizse None döner."""
+    kelime = _metin(d.get("kelime"), 300)
+    ceviri = _metin(d.get("ceviri"), 500)
+    if not kelime or not ceviri:
+        return None
+    dil = _metin(d.get("dil"), 10).lower()
+    hedef = _metin(d.get("hedef"), 10).lower()
+    sozluk = []
+    for e in (d.get("sozluk") or [])[:6]:
+        if not isinstance(e, dict):
+            continue
+        anlamlar = [_metin(a, 120) for a in (e.get("anlamlar") or [])[:10] if _metin(a, 120)]
+        if anlamlar:
+            sozluk.append({"tur": _metin(e.get("tur"), 20), "anlamlar": anlamlar})
+    ornekler = [_metin(o, 300) for o in (d.get("ornekler") or [])[:5] if _metin(o, 300)]
+    eklenme = _metin(d.get("eklenme"), 19)
+    if not parse_dt(eklenme, ZAMAN_FORMAT_SANIYE):
+        eklenme = datetime.utcnow().strftime(ZAMAN_FORMAT_SANIYE)
+    return {
+        "kelime": kelime, "ceviri": ceviri, "dil": dil, "hedef": hedef,
+        "sozluk": sozluk, "ornekler": ornekler, "eklenme": eklenme,
+        "ogrenildi": False, "gonderim_sayisi": 0, "son_gonderim": "",
+    }
+
+
+@app.route("/api/kelime", methods=["POST"])
+def api_kelime_ekle():
+    if not _app_yetkili():
+        return "Forbidden", 403
+    kayit = kelime_kaydi_hazirla(request.get_json(silent=True) or {})
+    if not kayit:
+        return jsonify({"status": "error", "detay": "kelime ve ceviri gerekli"}), 400
+    ref = db.collection("kelimeler").document(_kelime_id(kayit["kelime"], kayit["dil"]))
+    if ref.get().exists:
+        return jsonify({"status": "ok", "yeni": False})
+    ref.set(kayit)
+    return jsonify({"status": "ok", "yeni": True})
+
+
+def kelime_sec(adet):
+    """Öğrenilmemişlerden, en az gönderilenleri öncelikle (eşitlikte rastgele) seçer -> [(doc_id, dict)]"""
+    adaylar = [(d.id, d.to_dict()) for d in db.collection("kelimeler").stream() if not (d.to_dict() or {}).get("ogrenildi")]
+    random.shuffle(adaylar)
+    adaylar.sort(key=lambda x: x[1].get("gonderim_sayisi") or 0)   # sıralama kararlı: eşitler karışık kalır
+    return adaylar[:adet]
+
+
+def kelime_mesaji(secilen, baslik):
+    e = html_escape
+    satirlar = [f"<b>{e(baslik)}</b>", ""]
+    for n, (_, v) in enumerate(secilen, 1):
+        satirlar.append(f"<b>{n}. {e(v.get('kelime') or '')}</b> → {e(v.get('ceviri') or '')}")
+        sozluk = v.get("sozluk") or []
+        if sozluk:
+            anlam = ", ".join((sozluk[0].get("anlamlar") or [])[:4])
+            if anlam:
+                satirlar.append(f"    <i>{e(sozluk[0].get('tur') or '')}</i>: {e(anlam)}")
+        ornekler = v.get("ornekler") or []
+        if ornekler:
+            satirlar.append(f"    › {e(ornekler[0][:160])}")
+        satirlar.append("")
+    return "\n".join(satirlar).strip()
+
+
+def send_telegram_kelimeler(secilen, baslik):
+    """Kelime listesini 'öğrendim' butonlarıyla gönderir; başarılıysa sayaçları günceller."""
+    metin = kelime_mesaji(secilen, baslik)
+    klavye = [[{"text": f"✅ {(v.get('kelime') or '')[:24]} – öğrendim", "callback_data": f"kogren_{doc_id}"}]
+              for doc_id, v in secilen]
+    res = requests.post(f"{TELEGRAM_API}/sendMessage", json={
+        "chat_id": CHAT_ID, "text": metin[:4000], "parse_mode": "HTML",
+        "reply_markup": {"inline_keyboard": klavye},
+    })
+    if res.status_code == 200:
+        mesaj_kaydet("giden", re.sub(r"<[^>]+>", "", metin))
+        gun = gun_anahtari(yerel_simdi())
+        for doc_id, v in secilen:
+            try:
+                db.collection("kelimeler").document(doc_id).update(
+                    {"gonderim_sayisi": (v.get("gonderim_sayisi") or 0) + 1, "son_gonderim": gun})
+            except Exception as ex:
+                print(f"Kelime sayaç hatası: {ex}")
+    else:
+        print(f"Kelime gönderim hatası: {res.status_code} {res.text}")
+    return res
+
+
+def kelime_gonder_simdi():
+    """Telegram'da 'kelime' yazılınca çalışır."""
+    secilen = kelime_sec(KELIME_GUNLUK_ADET)
+    if not secilen:
+        send_telegram("📚 Gösterilecek kelime yok (ya hiç eklenmedi ya da hepsi öğrenildi).")
+        return
+    send_telegram_kelimeler(secilen, "📚 Kelime tekrarı")
+
+
+def gunluk_kelime_kontrol_et(now):
+    """Günde bir kez (KELIME_SAAT'ten sonraki ilk kontrolde) kelime listesi gönderir. Gönderilen kelime sayısını döner."""
+    yerel = utc_to_yerel(now)
+    if yerel.hour < KELIME_SAAT:
+        return 0
+    ref = db.collection("ayarlar").document("gunluk_kelime")
+    snap = ref.get()
+    gun = gun_anahtari(yerel)
+    if snap.exists and snap.to_dict().get("son_gonderim") == gun:
+        return 0
+    secilen = kelime_sec(KELIME_GUNLUK_ADET)
+    if not secilen:
+        return 0
+    res = send_telegram_kelimeler(secilen, "📚 Günün kelimeleri")
+    if res.status_code != 200:
+        return 0
+    ref.set({"son_gonderim": gun})
+    return len(secilen)
+
+
 @app.route("/", methods=["GET"])
 def home():
     return render_template("index.html")
@@ -1446,6 +1578,16 @@ def webhook_receive():
                 else:
                     answer_callback_query(cq["id"], "Madde bulunamadı")
 
+            elif cq_data.startswith("kogren_"):
+                doc_id = cq_data[len("kogren_"):]
+                ref = db.collection("kelimeler").document(doc_id)
+                snap = ref.get()
+                if snap.exists:
+                    ref.update({"ogrenildi": True})
+                    answer_callback_query(cq["id"], f"{snap.to_dict().get('kelime', '')} öğrenildi ✅")
+                else:
+                    answer_callback_query(cq["id"], "Kelime bulunamadı")
+
         elif "message" in data:
             text = data["message"].get("text", "").strip().lower()
             text = text.replace("ü", "u").replace("ğ", "g").replace("ı", "i")
@@ -1458,6 +1600,8 @@ def webhook_receive():
                 haftalik_liste_gonder()
             elif text in ("hepsi", "tumu", "/hepsi"):
                 tum_bekleyenler_gonder()
+            elif text in ("kelime", "/kelime", "kelimeler"):
+                kelime_gonder_simdi()
             elif text in ("yardim", "/yardim", "/help", "yardım"):
                 send_telegram(yardim_metni())
             else:
@@ -1707,10 +1851,17 @@ def check_assignments():
         print(f"Checklist hatırlatma hatası: {e}")
         checklist_gonderilen = 0
 
+    try:
+        kelime_gonderilen = gunluk_kelime_kontrol_et(now)
+    except Exception as e:
+        print(f"Günlük kelime hatası: {e}")
+        kelime_gonderilen = 0
+
     return jsonify({
         "status": "ok",
         "gonderilen_bildirim": gonderilen_sayisi,
         "gonderilen_checklist": checklist_gonderilen,
+        "gonderilen_kelime": kelime_gonderilen,
     })
 
 
