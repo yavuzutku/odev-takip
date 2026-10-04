@@ -1369,14 +1369,25 @@ def _kelime_id(kelime, dil):
     return hashlib.sha1(ham.encode("utf-8")).hexdigest()[:20]
 
 
+IZINLI_DILLER = ("en", "de", "tr")      # öğrenci yalnızca bu üç dille çalışıyor
+BAYRAK = {"en": "🇬🇧", "de": "🇩🇪", "tr": "🇹🇷"}
+
+
+def dil_normal(v):
+    x = (_metin(v, 10).lower() or "")[:2]
+    return x if x in IZINLI_DILLER else ""
+
+
 def kelime_kaydi_hazirla(d):
     """İstekten gelen veriyi temizler; geçersizse None döner."""
     kelime = _metin(d.get("kelime"), 300)
-    ceviri = _metin(d.get("ceviri"), 500)
-    if not kelime or not ceviri:
+    if not kelime:
         return None
-    dil = _metin(d.get("dil"), 10).lower()
-    hedef = _metin(d.get("hedef"), 10).lower()
+    ceviri = _metin(d.get("ceviri"), 500)   # boş olabilir: yapay zeka doldurur
+    dil = dil_normal(d.get("dil"))          # en/de/tr dışındaysa boş: yapay zeka belirler
+    hedef = dil_normal(d.get("hedef"))
+    if dil and not hedef:
+        hedef = "en" if dil == "tr" else "tr"
     sozluk = []
     for e in (d.get("sozluk") or [])[:6]:
         if not isinstance(e, dict):
@@ -1390,6 +1401,7 @@ def kelime_kaydi_hazirla(d):
         eklenme = datetime.utcnow().strftime(ZAMAN_FORMAT_SANIYE)
     return {
         "kelime": kelime, "ceviri": ceviri, "dil": dil, "hedef": hedef,
+        "dil_elle": bool(d.get("dil_elle")) and bool(dil),
         "sozluk": sozluk, "ornekler": ornekler, "eklenme": eklenme,
         "ogrenildi": False, "gonderim_sayisi": 0, "son_gonderim": "",
     }
@@ -1400,11 +1412,16 @@ KELIME_AI_PARTI = 4           # tek Gemini çağrısında incelenecek kelime say
 _kelime_ai_kilit = threading.Lock()
 
 KELIME_AI_SISTEM = (
-    "Sen deneyimli bir dil öğretmenisin. Öğrenci Türkçe konuşuyor ve kelime defterine eklediği kelimeleri "
-    "köküne kadar öğrenmek istiyor. Girdi JSON: {\"kelimeler\":[{\"i\":0,\"kelime\":...,\"ceviri\":...,\"dil\":...,\"hedef\":...}]}. "
-    "'kelime' kaynak dildeki sözcük ya da ifade (dil kodu: en, de, tr...), 'ceviri' programın verdiği çeviridir. "
+    "Sen deneyimli bir dil öğretmenisin. Öğrenci Türkçe konuşuyor ve YALNIZCA üç dil çalışıyor: İngilizce (en), Almanca (de) ve Türkçe (tr). "
+    "Kelime defterine eklediği kelimeleri köküne kadar öğrenmek istiyor. "
+    "Girdi JSON: {\"kelimeler\":[{\"i\":0,\"kelime\":...,\"ceviri\":...,\"dil\":...,\"hedef\":...,\"kesin\":true/false}]}. "
+    "'kelime' kaynak dildeki sözcük ya da ifade. 'dil' çeviri programının tahminidir ve YANLIŞ olabilir (boş da olabilir). "
+    "'kesin' true ise öğrenci dili kendisi seçmiştir: dili ASLA değiştirme. 'ceviri' boş olabilir. "
     "Her kelime için SADECE şu JSON'u döndür: {\"sonuclar\":[{...}]}. Her sonuç nesnesinin alanları: "
     "i (girdideki sayı, aynen), "
+    "dil (kaynak dil; YALNIZCA \"en\", \"de\" ya da \"tr\". kesin true ise girdideki dilin aynısı. Değilse kelimeye bakarak gerçek dili belirle: "
+    "örn. 'house' en, 'Haus' de, 'ev' tr; girdideki dil bu üçünden biriyse ve kelimeye uyuyorsa aynen yaz, uymuyorsa düzelt), "
+    "ceviri (girdideki çeviri boşsa kısa ve doğru çeviri: kaynak dil tr ise İngilizce, değilse Türkçe; doluysa \"\"), "
     "kok (sözlük başı / kök biçim; çekimli ya da türemiş kelimede kökü, ifadede ana sözcüğü), "
     "kok_anlam (kökün Türkçe anlamı, kısa), "
     "tur (Türkçe sözcük türü: isim, fiil, sıfat, zarf, deyim...), "
@@ -1416,11 +1433,12 @@ KELIME_AI_SISTEM = (
     "es_anlamlilar (en çok 4, kaynak dilde), zit_anlamlilar (en çok 3, kaynak dilde), "
     "aile (kelime ailesi: aynı kökten en çok 5 sözcük, örn. 'happiness (isim)'), "
     "seviye (A1, A2, B1, B2, C1 ya da C2; emin değilsen \"\"), "
-    "ornekler (en çok 2: [{\"cumle\":\"kaynak dilde basit cümle\",\"tr\":\"Türkçesi\"}]), "
+    "ornekler (en çok 2: [{\"cumle\":\"belirlediğin KAYNAK dilde basit cümle\",\"tr\":\"Türkçesi\"}]), "
     "ipucu (Türkçe, en çok 140 karakter: akılda tutma yolu, benzer kelimeyle karışma uyarısı ya da kullanım notu; yoksa \"\"), "
     "duzeltme (verilen çeviri bu sözcük için yanlış ya da çok yanıltıcıysa doğrusunu Türkçe açıkla; doğruysa \"\"). "
-    "Kurallar: Uydurma, emin olmadığın alanı boş bırak (\"\" ya da []). Kaynak Türkçe ise kök ve ekleri Türkçe sözcük yapısına göre ver. "
-    "Çoğul/forms alanlarını yalnızca o sözcük türüne uygunsa doldur. Açıklamalar Türkçe, örnek cümleler kaynak dilde olsun."
+    "Kurallar: Uydurma, emin olmadığın alanı boş bırak (\"\" ya da []). Kök, çoğul, formlar, ekler ve örnek cümleler MUTLAKA belirlediğin kaynak dile ait olsun "
+    "(Almanca kelimeye İngilizce örnek verme). Kaynak Türkçe ise kök ve ekleri Türkçe sözcük yapısına göre ver. "
+    "Çoğul/formlar alanlarını yalnızca o sözcük türüne uygunsa doldur. Açıklamalar Türkçe, örnek cümleler kaynak dilde olsun."
 )
 
 
@@ -1462,6 +1480,15 @@ def kelime_ai_temizle(v):
     }
 
 
+def kelime_ai_gerek(v):
+    """Kelime yapay zeka incelemesi bekliyor mu? (hiç incelenmemiş, dili geçersiz ya da çevirisi boş)"""
+    if (v.get("ai_hata") or 0) >= KELIME_AI_MAX_HATA:
+        return False
+    if not v.get("ai") or not (v.get("ceviri") or "").strip():
+        return True
+    return (v.get("dil") or "") not in IZINLI_DILLER and not v.get("dil_kontrol")
+
+
 def kelime_ai_isle(belgeler, butce=40):
     """belgeler: [(doc_id, dict)]. Gemini ile inceler, sonucu belgenin 'ai' alanına yazar.
     Başarıyla işlenen doc_id'lerin kümesini döner. Gemini hatalarını (GeminiHata) yukarı fırlatır."""
@@ -1470,7 +1497,8 @@ def kelime_ai_isle(belgeler, butce=40):
     if not belgeler:
         return set()
     girdi = [{"i": i, "kelime": v.get("kelime") or "", "ceviri": v.get("ceviri") or "",
-              "dil": v.get("dil") or "", "hedef": v.get("hedef") or ""} for i, (_, v) in enumerate(belgeler)]
+              "dil": v.get("dil") or "", "hedef": v.get("hedef") or "",
+              "kesin": bool(v.get("dil_elle")) and (v.get("dil") or "") in IZINLI_DILLER} for i, (_, v) in enumerate(belgeler)]
     ham = gemini_uret(KELIME_AI_SISTEM, json.dumps({"kelimeler": girdi}, ensure_ascii=False), json_cikti=True,
                       max_token=min(1800 * len(belgeler), 8000), sicaklik=0.2, timeout=40, butce=butce)
     veri = json_ayikla(ham)
@@ -1486,8 +1514,17 @@ def kelime_ai_isle(belgeler, butce=40):
         ai = kelime_ai_temizle(r)
         if not ai:
             continue
-        doc_id = belgeler[i][0]
-        db.collection("kelimeler").document(doc_id).update({"ai": ai, "ai_zaman": zaman})
+        doc_id, v = belgeler[i]
+        guncelle = {"ai": ai, "ai_zaman": zaman, "ai_hata": 0, "dil_kontrol": True}
+        dil_ai = dil_normal(r.get("dil"))
+        if dil_ai and not (v.get("dil_elle") and (v.get("dil") or "") in IZINLI_DILLER):
+            guncelle["dil"] = dil_ai
+            if dil_normal(v.get("hedef")) in ("", dil_ai):   # hedef boş ya da kaynakla aynıysa düzelt
+                guncelle["hedef"] = "en" if dil_ai == "tr" else "tr"
+        ceviri_ai = _metin(r.get("ceviri"), 500)
+        if ceviri_ai and not (v.get("ceviri") or "").strip():
+            guncelle["ceviri"] = ceviri_ai
+        db.collection("kelimeler").document(doc_id).update(guncelle)
         islenen.add(doc_id)
     return islenen
 
@@ -1502,7 +1539,7 @@ def kelime_ai_arka_plan(belgeler=None, adet=KELIME_AI_PARTI):
             liste = belgeler
             if liste is None:
                 tum = [(d.id, d.to_dict() or {}) for d in db.collection("kelimeler").stream()]
-                liste = [(i, v) for i, v in tum if not v.get("ai") and (v.get("ai_hata") or 0) < KELIME_AI_MAX_HATA]
+                liste = [(i, v) for i, v in tum if kelime_ai_gerek(v)]
                 liste.sort(key=lambda x: x[1].get("eklenme") or "", reverse=True)   # yeniler önce
                 liste = liste[:adet]
             if not liste:
@@ -1554,7 +1591,7 @@ def api_kelime_ekle():
         return "Forbidden", 403
     kayit = kelime_kaydi_hazirla(request.get_json(silent=True) or {})
     if not kayit:
-        return jsonify({"status": "error", "detay": "kelime ve ceviri gerekli"}), 400
+        return jsonify({"status": "error", "detay": "kelime gerekli"}), 400
     ref = db.collection("kelimeler").document(_kelime_id(kayit["kelime"], kayit["dil"]))
     if ref.get().exists:
         return jsonify({"status": "ok", "yeni": False})
@@ -1565,7 +1602,7 @@ def api_kelime_ekle():
 
 def kelime_sec(adet):
     """Öğrenilmemişlerden, en az gönderilenleri öncelikle (eşitlikte rastgele) seçer -> [(doc_id, dict)]"""
-    adaylar = [(d.id, d.to_dict()) for d in db.collection("kelimeler").stream() if not (d.to_dict() or {}).get("ogrenildi")]
+    adaylar = [(d.id, d.to_dict()) for d in db.collection("kelimeler").stream() if not (d.to_dict() or {}).get("ogrenildi") and (d.to_dict() or {}).get("ceviri")]
     random.shuffle(adaylar)
     adaylar.sort(key=lambda x: x[1].get("gonderim_sayisi") or 0)   # sıralama kararlı: eşitler karışık kalır
     return adaylar[:adet]
@@ -1575,7 +1612,7 @@ def kelime_mesaji(secilen, baslik):
     e = html_escape
     satirlar = [f"<b>{e(baslik)}</b>", ""]
     for n, (_, v) in enumerate(secilen, 1):
-        satirlar.append(f"<b>{n}. {e(v.get('kelime') or '')}</b> → {e(v.get('ceviri') or '')}")
+        satirlar.append(f"{BAYRAK.get(v.get('dil') or '', '')} <b>{n}. {e(v.get('kelime') or '')}</b> → {e(v.get('ceviri') or '')}".strip())
         ai = v.get("ai") or {}
         bilgi = []
         if ai.get("kok") and ai["kok"].strip().lower() != (v.get("kelime") or "").strip().lower():

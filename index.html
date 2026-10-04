@@ -887,6 +887,69 @@
   .srs-alt button small{display:block;font-weight:400;font-size:11px;color:var(--text-faint);margin-top:2px;}
   .srs-alt .p1{border-color:#e5484d;} .srs-alt .p2{border-color:#f59e0b;} .srs-alt .p3{border-color:#16a34a;} .srs-alt .p4{border-color:#3b82f6;}
   .srs-alt .show{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  /* ---- Kelimeler: yeni arayüz ---- */
+  .kv{display:flex;flex-direction:column;gap:14px;}
+  .kv-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+  .kv-title{margin:0;font-family:var(--serif);font-size:22px;}
+  .kv-sub{font-size:12.5px;color:var(--text-faint);margin-top:3px;}
+  .kv-acts{display:flex;gap:8px;flex-wrap:wrap;}
+  .kv-btn{padding:8px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;cursor:pointer;font-family:var(--sans);transition:.12s;}
+  .kv-btn:hover{border-color:var(--border-hover,var(--accent));}
+  .kv-btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;}
+  .kv-btn.on{border-color:var(--accent);color:var(--accent);}
+  .kv-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .kv-tab{position:relative;display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:12px 14px 14px;border-radius:14px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);cursor:pointer;text-align:left;font-family:var(--sans);overflow:hidden;transition:.15s;}
+  .kv-tab:hover{transform:translateY(-1px);}
+  .kv-tab.on{border-color:var(--lc);background:color-mix(in srgb,var(--lc) 9%,var(--bg-soft));box-shadow:0 0 0 2px color-mix(in srgb,var(--lc) 22%,transparent);}
+  .kv-flag{font-size:22px;line-height:1;}
+  .kv-tn{font-weight:600;font-size:14px;margin-top:4px;}
+  .kv-tc{font-size:12px;color:var(--text-dim);display:flex;gap:6px;align-items:center;}
+  .kv-due{font-style:normal;background:#e5484d;color:#fff;border-radius:999px;font-size:10.5px;padding:1px 6px;font-weight:600;}
+  .kv-bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:color-mix(in srgb,var(--lc) 14%,transparent);}
+  .kv-bar i{display:block;height:100%;background:var(--lc);}
+  .kv-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .kv-tools input,.kv-tools select{padding:9px 11px;border-radius:10px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:13px;font-family:var(--sans);}
+  .kv-tools input{flex:1;min-width:170px;}
+  .kv-chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .kv-chips button{padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text-dim);font-size:12px;cursor:pointer;font-family:var(--sans);}
+  .kv-chips button.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+  .kv-chips button b{font-weight:600;margin-left:3px;opacity:.75;}
+  .kl-grid.liste{grid-template-columns:1fr;gap:8px;}
+  .kc{position:relative;background:var(--bg-soft);border:1px solid var(--border);border-left:4px solid var(--lc,var(--accent));border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;transition:transform .12s,box-shadow .12s;}
+  .kc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.08);}
+  .kc.ok{opacity:.62;}
+  .kc.sel{outline:2px solid var(--accent);}
+  .kc-cb{position:absolute;top:12px;right:12px;width:18px;height:18px;accent-color:var(--accent);}
+  .kc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .kc-word{font-family:var(--serif);font-size:18px;font-weight:600;word-break:break-word;}
+  .kc-ic{display:flex;gap:2px;flex-shrink:0;}
+  .kc-ic button{border:0;background:transparent;cursor:pointer;font-size:16px;padding:2px 5px;border-radius:6px;color:var(--text-dim);}
+  .kc-ic button:hover{background:var(--surface);}
+  .kc-ic button.on{color:#f59e0b;}
+  .kc-tr{color:var(--lc,var(--accent));font-weight:600;font-size:14.5px;}
+  .kc-st{font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:600;border:1px solid var(--border);color:var(--text-dim);}
+  .kc-st.yeni{color:#3b82f6;border-color:#3b82f6;} .kc-st.ogreniyor{color:#e5484d;border-color:#e5484d;}
+  .kc-st.tekrar{color:#f59e0b;border-color:#f59e0b;} .kc-st.olgun{color:#16a34a;border-color:#16a34a;}
+  .kc-not{font-size:12px;color:var(--text-dim);background:var(--surface);border-radius:8px;padding:6px 9px;}
+  .kc-warn{font-size:12px;color:#e5484d;cursor:pointer;}
+  .kc .kl-meta{margin-top:4px;}
+  .kc.liste{flex-direction:row;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 14px;}
+  .kc.liste .kc-top{min-width:150px;}
+  .kc.liste .kc-tr{flex:1;min-width:120px;}
+  .kc.liste .kl-tur,.kc.liste .kl-ex,.kc.liste .kl-more,.kc.liste .kc-not,.kc.liste .kl-ai-wait{display:none;}
+  .kc.liste .kl-meta{margin:0;gap:12px;}
+  .kv-bulk{position:sticky;bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:13px;}
+  .kv-bulk button,.kv-bulk select{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);cursor:pointer;font-size:12.5px;font-family:var(--sans);}
+  .kv-bulk .danger{color:#e5484d;border-color:#e5484d;}
+  .kv-ov{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;}
+  .kv-dlg{background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:440px;display:flex;flex-direction:column;gap:10px;max-height:90vh;overflow:auto;}
+  .kv-dlg h4{margin:0 0 4px;font-family:var(--serif);font-size:18px;}
+  .kv-dlg label,.kv-lbl{font-size:12px;color:var(--text-dim);display:flex;flex-direction:column;gap:4px;}
+  .kv-dlg input,.kv-dlg textarea,.kv-dlg select{padding:9px 11px;border-radius:10px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text);font-size:14px;font-family:var(--sans);}
+  .kv-seg{display:flex;gap:6px;flex-wrap:wrap;}
+  .kv-seg button{flex:1;min-width:70px;padding:8px 6px;border-radius:10px;border:1px solid var(--border);background:var(--bg-soft);color:var(--text-dim);cursor:pointer;font-size:13px;font-family:var(--sans);}
+  .kv-seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;}
+  .kv-row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -1156,8 +1219,16 @@
       <div class="srs-alt" id="srsAlt"></div>
     </div>
     <div class="view-pane" id="paneKelimeler" style="display:none;">
-      <div class="panel-card">
-        <h3>📚 Kelimelerim <span id="kelimeSayac" style="font-size:12px;font-weight:400;color:var(--text-faint);margin-left:6px;"></span></h3>
+      <div class="kv">
+        <div class="kv-head">
+          <div><h3 class="kv-title">📚 Kelimelerim</h3><div class="kv-sub" id="kelimeSayac"></div></div>
+          <div class="kv-acts">
+            <button class="kv-btn pri" id="kvEkle" type="button">＋ Kelime ekle</button>
+            <button class="kv-btn" id="kvSec" type="button">☑ Seç</button>
+            <button class="kv-btn" id="kvIndir" type="button" title="Bu dildeki kelimeleri Anki/Excel'e aktarılabilir dosya olarak indir">⬇ Dışa aktar</button>
+          </div>
+        </div>
+        <div class="kv-tabs" id="kvTabs"></div>
         <div class="srs-ban" id="srsBan">
           <div class="srs-cnt" id="srsCnt"></div>
           <div class="srs-row">
@@ -1168,17 +1239,32 @@
           </div>
           <div class="srs-fc" id="srsFc" title="Önümüzdeki 7 günde tekrar edilecek kart sayısı"></div>
         </div>
-        <div class="kl-bar">
-          <input type="text" id="kelimeAra" placeholder="Kelime ara…" maxlength="60" autocomplete="off">
-          <span id="kelimeFiltre" style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="kl-f active" data-f="hepsi" type="button">Hepsi</button>
-            <button class="kl-f" data-f="ogrenilmedi" type="button">Öğrenilmeyen</button>
-            <button class="kl-f" data-f="ogrenildi" type="button">Öğrenilen</button>
-          </span>
+        <div class="kv-tools">
+          <input type="text" id="kelimeAra" placeholder="Ara: kelime, çeviri, kök, çoğul, notlar…" maxlength="60" autocomplete="off">
+          <select id="kvSirala" title="Sırala">
+            <option value="yeni">Yeniden eskiye</option><option value="eski">Eskiden yeniye</option>
+            <option value="az">A → Z</option><option value="za">Z → A</option>
+            <option value="zor">En zor önce</option><option value="tekrar">Tekrarı yaklaşan</option><option value="seviye">Seviye</option>
+          </select>
+          <select id="kvSeviye" title="Seviye"><option value="">Tüm seviyeler</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+          <button class="kv-btn" id="kvGorunum" type="button" title="Kart / liste görünümü">▦</button>
         </div>
+        <div class="kv-chips" id="kelimeFiltre"></div>
         <div class="kl-grid" id="kelimeGrid"></div>
-        <div class="field-hint"><span>Çeviri programında eklediğin kelimeler burada görünür. Her gün Telegram'a da birkaç kelime gönderilir; Telegram'dan <b>kelime</b> yazarak istediğin an da isteyebilirsin.</span></div>
+        <button class="kv-btn" id="kvDaha" type="button" style="display:none;align-self:center;">Daha fazla göster</button>
+        <div class="field-hint"><span>Çeviri programında eklediğin kelimeler dillerine göre burada listelenir. Dil yanlış algılanırsa kartta ✎ ile düzelt. Telegram'dan <b>kelime</b> yazarak istediğin an kelime isteyebilirsin.</span></div>
+        <div class="kv-bulk" id="kvBulk" style="display:none;">
+          <span id="kvBulkN" style="font-weight:600;margin-right:4px;"></span>
+          <button data-b="hepsi" type="button">Tümünü seç</button>
+          <button data-b="fav" type="button">★ Favori</button>
+          <button data-b="ogren" type="button">✓ Biliyorum</button>
+          <button data-b="askida" type="button">⏸ Askıya al</button>
+          <select id="kvBulkDil"><option value="">Dili değiştir…</option><option value="en">🇬🇧 İngilizce</option><option value="de">🇩🇪 Almanca</option><option value="tr">🇹🇷 Türkçe</option></select>
+          <button data-b="sil" class="danger" type="button">🗑 Sil</button>
+          <button data-b="kapat" type="button">Bitti</button>
+        </div>
       </div>
+      <div class="kv-ov" id="kvModal"></div>
     </div>
   </div>
 
@@ -5666,29 +5752,55 @@ nBody.addEventListener('keydown', e => {
 nBody.addEventListener('blur', () => setTimeout(nSlashClose, 120));
 nCanvas.addEventListener('scroll', nSlashClose);
 
-// ---- Kelimeler (çeviri programından gelir; Firestore 'kelimeler') ----
+// ---- Kelimeler: dile göre ayrı listeler (Firestore 'kelimeler') ----
 const kelimelerRef = collection(db, "kelimeler");
+const DILLER = {
+  en: {ad: "İngilizce", bayrak: "🇬🇧", renk: "#3b82f6"},
+  de: {ad: "Almanca", bayrak: "🇩🇪", renk: "#f59e0b"},
+  tr: {ad: "Türkçe", bayrak: "🇹🇷", renk: "#ef4444"}
+};
 let kelimeler = [];
-let kelimeFiltre = "hepsi";
-let kelimeAra = "";
+const kelimeAcik = new Set();   // açık bırakılan "Kök, ekler, formlar" kartları
+const kv = {
+  dil: localStorage.getItem("kelimeDil") || "en", filtre: "hepsi", sirala: localStorage.getItem("kvSirala") || "yeni",
+  seviye: "", ara: "", gorunum: localStorage.getItem("kvGorunum") || "kart", limit: 60, sec: false, secili: new Set(), ilk: false
+};
+const DURUM_AD = {yeni: "Yeni", ogreniyor: "Öğreniliyor", tekrar: "Tekrar", olgun: "Olgun", askida: "Askıda"};
 
+async function kApi(yol, govde){
+  const r = await fetch(yol, {method: "POST", headers: {"Content-Type": "application/json", "X-App-Token": APP_API_TOKEN}, body: JSON.stringify(govde)});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detay || ("HTTP " + r.status));
+  return d;
+}
+const kdil = k => { const d = String(k.dil || "").toLowerCase().slice(0, 2); return DILLER[d] ? d : "?"; };
+const kelimelerDil = () => kelimeler.filter(k => kdil(k) === kv.dil);
+function kdurum(k){
+  const s = k.srs;
+  if (s && s.askida) return "askida";
+  if (!s || s.durum === "yeni") return "yeni";
+  if (s.durum === "tekrar") return s.aralik >= 21 ? "olgun" : "tekrar";
+  return "ogreniyor";
+}
+const kzor = k => !!(k.srs && ((k.srs.hata || 0) >= 2 || (k.srs.ef && k.srs.ef < 2.0)));
+function kSonraki(k){
+  const s = k.srs; if (!s || s.askida || s.durum === "yeni") return "";
+  if (srsOgreniyor(s)){ const dk = Math.round((s.due - Date.now())/60000); return dk <= 0 ? "şimdi" : (dk < 60 ? dk + " dk sonra" : Math.round(dk/60) + " sa sonra"); }
+  const g = Math.round((s.due - srsGunBasi().getTime())/86400000);
+  return g <= 0 ? "bugün" : (g === 1 ? "yarın" : g + " gün sonra");
+}
 function kelimeTarih(s){
   if (!s) return "";
   const d = new Date(s + "Z");
-  return isNaN(d) ? "" : d.toLocaleDateString("tr-TR", {day:"numeric", month:"short"});
+  return isNaN(d) ? "" : d.toLocaleDateString("tr-TR", {day: "numeric", month: "short"});
 }
 
-const kelimeAcik = new Set();   // açık bırakılan "Kök, ekler, formlar" kartları (yenilemede kapanmasın)
-
 function kelimeAiHtml(a){
-  const esc = escapeHtml;
-  const sat = [];
+  const esc = escapeHtml, sat = [];
   if (a.kok) sat.push("<div><b>Kök</b>" + esc(a.kok) + (a.kok_anlam ? " — " + esc(a.kok_anlam) : "") + "</div>");
   if (a.cogul) sat.push("<div><b>Çoğul</b>" + esc(a.cogul) + "</div>");
-  if ((a.ekler || []).length) sat.push("<div><b>Ekler</b>" + a.ekler.map(e =>
-    esc(e.ek) + (e.anlam ? " (" + esc(e.anlam) + ")" : "")).join(" · ") + "</div>");
-  if ((a.formlar || []).length) sat.push("<div><b>Formlar</b>" + a.formlar.map(f =>
-    (f.ad ? esc(f.ad) + ": " : "") + "<i>" + esc(f.deger) + "</i>").join(" · ") + "</div>");
+  if ((a.ekler || []).length) sat.push("<div><b>Ekler</b>" + a.ekler.map(e => esc(e.ek) + (e.anlam ? " (" + esc(e.anlam) + ")" : "")).join(" · ") + "</div>");
+  if ((a.formlar || []).length) sat.push("<div><b>Formlar</b>" + a.formlar.map(f => (f.ad ? esc(f.ad) + ": " : "") + "<i>" + esc(f.deger) + "</i>").join(" · ") + "</div>");
   if ((a.es_anlamlilar || []).length) sat.push("<div><b>Eş anlamlı</b>" + a.es_anlamlilar.map(esc).join(", ") + "</div>");
   if ((a.zit_anlamlilar || []).length) sat.push("<div><b>Zıt anlamlı</b>" + a.zit_anlamlilar.map(esc).join(", ") + "</div>");
   if ((a.aile || []).length) sat.push("<div><b>Kelime ailesi</b>" + a.aile.map(esc).join(" · ") + "</div>");
@@ -5699,99 +5811,243 @@ function kelimeAiHtml(a){
 }
 
 async function kelimeAiYenile(id, btn){
-  const eski = btn.textContent;
-  btn.disabled = true; btn.textContent = "…";
+  const eski = btn ? btn.textContent : "";
+  if (btn){ btn.disabled = true; btn.textContent = "…"; }
   try{
-    const r = await fetch("/api/kelime/yenile", {
-      method: "POST",
-      headers: {"Content-Type": "application/json", "X-App-Token": APP_API_TOKEN},
-      body: JSON.stringify({id})
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.detay || ("HTTP " + r.status));
+    await kApi("/api/kelime/yenile", {id});
     toast("Yapay zeka güncelledi ✨", true);
   }catch(err){
     toast("AI hatası: " + String((err && err.message) || err).slice(0, 90), false, 3200);
   }
-  btn.disabled = false; btn.textContent = eski;
+  if (btn){ btn.disabled = false; btn.textContent = eski; }
 }
 
-function renderKelimeler(){
-  const grid = document.getElementById("kelimeGrid");
-  if (!grid) return;
-  if (typeof srsBannerCiz === "function") srsBannerCiz();
-  const ogr = kelimeler.filter(k => k.ogrenildi).length;
-  document.getElementById("kelimeSayac").textContent = kelimeler.length ? kelimeler.length + " kelime · " + ogr + " öğrenildi" : "";
-  const q = kelimeAra.trim().toLocaleLowerCase("tr");
-  const liste = kelimeler.filter(k => {
-    if (kelimeFiltre === "ogrenilmedi" && k.ogrenildi) return false;
-    if (kelimeFiltre === "ogrenildi" && !k.ogrenildi) return false;
+// ---------- filtre + sıralama ----------
+function kFiltrele(){
+  const q = kv.ara.trim().toLocaleLowerCase("tr");
+  const l = kelimelerDil().filter(k => {
+    const d = kdurum(k);
+    if (kv.filtre === "fav" && !k.fav) return false;
+    if (kv.filtre === "zor" && !kzor(k)) return false;
+    if (kv.filtre === "ogrenildi" && !k.ogrenildi) return false;
+    if (DURUM_AD[kv.filtre] && d !== kv.filtre) return false;
+    if (kv.seviye && (k.ai || {}).seviye !== kv.seviye) return false;
     if (!q) return true;
     const a = k.ai || {};
-    const ekstra = (a.kok || "") + " " + (a.cogul || "") + " " + (a.formlar || []).map(f => f.deger).join(" ");
-    return ((k.kelime || "") + " " + (k.ceviri || "") + " " + ekstra).toLocaleLowerCase("tr").includes(q);
+    const saman = [k.kelime, k.ceviri, k.not, a.kok, a.cogul, (a.formlar || []).map(f => f.deger).join(" "), (a.es_anlamlilar || []).join(" ")].join(" ");
+    return saman.toLocaleLowerCase("tr").includes(q);
   });
-  if (!liste.length){
-    grid.innerHTML = '<div class="field-hint" style="grid-column:1/-1;"><span>' +
-      (kelimeler.length ? "Eşleşen kelime yok." : "Henüz kelime yok. Çeviri programında bir kelimeyi Ekle ile kaydedince burada görünür.") + "</span></div>";
-    return;
-  }
-  grid.innerHTML = liste.map(k => {
-    const turler = (k.sozluk || []).slice(0, 3).map(t =>
-      '<div class="kl-tur"><b>' + escapeHtml(t.tur || "") + "</b>" + escapeHtml((t.anlamlar || []).slice(0, 5).join(" · ")) + "</div>").join("");
-    const ornek = (k.ornekler || [])[0];
-    const dilEtiketi = k.dil ? '<span class="kl-lang">' + escapeHtml(k.dil + (k.hedef ? " → " + k.hedef : "")) + "</span>" : "";
-    const a = k.ai || null;
-    const chips = a ? '<div class="kl-chips">' +
-      (a.tur ? '<span class="kl-chip">' + escapeHtml(a.tur) + "</span>" : "") +
-      (a.seviye ? '<span class="kl-chip lv">' + escapeHtml(a.seviye) + "</span>" : "") +
-      (a.okunus ? '<span class="kl-chip">' + escapeHtml(a.okunus) + "</span>" : "") + "</div>" : "";
-    const acik = kelimeAcik.has(k.id) ? " open" : "";
-    const ai = a ? '<details class="kl-more" data-id="' + escAttr(k.id) + '"' + acik + "><summary>Kök, ekler, formlar</summary>" + kelimeAiHtml(a) + "</details>"
-                 : '<div class="kl-ai-wait">⏳ Yapay zeka inceliyor… kısa süre içinde eklenir</div>';
-    return '<div class="kl-card' + (k.ogrenildi ? " ok" : "") + '">' +
-      '<div class="kl-word">' + escapeHtml(k.kelime || "") + dilEtiketi + "</div>" +
-      '<div class="kl-tr">' + escapeHtml(k.ceviri || "") + "</div>" +
-      chips +
-      turler +
-      (ornek ? '<div class="kl-ex">› ' + escapeHtml(ornek) + "</div>" : "") +
-      ai +
-      '<div class="kl-meta"><span>' + escapeHtml(kelimeTarih(k.eklenme)) + (k.gonderim_sayisi ? " · " + k.gonderim_sayisi + "× tekrar" : "") + "</span>" +
-      '<span class="kl-act"><button type="button" data-kl="ai" data-id="' + escAttr(k.id) + '" title="Yapay zekayla yeniden incele">✨</button>' +
-      '<button type="button" data-kl="ogren" data-id="' + escAttr(k.id) + '">' + (k.ogrenildi ? "↺ Geri al" : "✓ Öğrendim") + "</button>" +
-      '<button type="button" data-kl="sil" data-id="' + escAttr(k.id) + '" title="Sil">🗑</button></span></div>' +
-      "</div>";
+  const due = x => (x.srs && x.srs.due) ? x.srs.due : 9e15;
+  const loc = kv.dil === "?" ? "en" : kv.dil;
+  const sira = {
+    yeni: (x, y) => (y.eklenme || "").localeCompare(x.eklenme || ""),
+    eski: (x, y) => (x.eklenme || "").localeCompare(y.eklenme || ""),
+    az: (x, y) => (x.kelime || "").localeCompare(y.kelime || "", loc),
+    za: (x, y) => (y.kelime || "").localeCompare(x.kelime || "", loc),
+    zor: (x, y) => ((y.srs || {}).hata || 0) - ((x.srs || {}).hata || 0),
+    tekrar: (x, y) => due(x) - due(y),
+    seviye: (x, y) => ((x.ai || {}).seviye || "Z").localeCompare((y.ai || {}).seviye || "Z")
+  }[kv.sirala] || (() => 0);
+  return l.sort(sira);
+}
+
+// ---------- çizim ----------
+function kTabsCiz(){
+  const gruplar = {en: [], de: [], tr: [], "?": []};
+  kelimeler.forEach(k => gruplar[kdil(k)].push(k));
+  const simdi = Date.now(), sinir = srsGunEkle(1);
+  const adlar = ["en", "de", "tr"].concat(gruplar["?"].length ? ["?"] : []);
+  document.getElementById("kvTabs").innerHTML = adlar.map(d => {
+    const l = gruplar[d], info = DILLER[d] || {ad: "Dili belirsiz", bayrak: "❓", renk: "#9ca3af"};
+    const olgun = l.filter(k => kdurum(k) === "olgun").length;
+    const due = l.filter(k => { const s = k.srs; return s && !s.askida && ((srsOgreniyor(s) && s.due <= simdi) || (s.durum === "tekrar" && s.due < sinir)); }).length;
+    return '<button type="button" class="kv-tab' + (kv.dil === d ? " on" : "") + '" data-d="' + d + '" style="--lc:' + info.renk + '" title="' + olgun + ' olgun kelime">' +
+      '<span class="kv-flag">' + info.bayrak + '</span><span class="kv-tn">' + info.ad + '</span>' +
+      '<span class="kv-tc">' + l.length + " kelime" + (due ? ' <i class="kv-due" title="Bugün tekrar bekleyen">' + due + "</i>" : "") + "</span>" +
+      '<span class="kv-bar"><i style="width:' + (l.length ? Math.round(olgun/l.length*100) : 0) + '%"></i></span></button>';
   }).join("");
 }
 
+function kChipsCiz(){
+  const l = kelimelerDil();
+  const say = {hepsi: l.length, fav: l.filter(k => k.fav).length, zor: l.filter(kzor).length, ogrenildi: l.filter(k => k.ogrenildi).length};
+  Object.keys(DURUM_AD).forEach(d => say[d] = l.filter(k => kdurum(k) === d).length);
+  const liste = [["hepsi", "Hepsi"], ["yeni", "Yeni"], ["ogreniyor", "Öğreniliyor"], ["tekrar", "Tekrar"], ["olgun", "Olgun"], ["askida", "Askıda"], ["fav", "★ Favori"], ["zor", "Zor"], ["ogrenildi", "✓ Biliyorum"]];
+  document.getElementById("kelimeFiltre").innerHTML = liste.map(([f, ad]) =>
+    '<button type="button" data-f="' + f + '" class="' + (kv.filtre === f ? "active" : "") + '">' + ad + "<b>" + say[f] + "</b></button>").join("");
+}
+
+function kKartHtml(k){
+  const a = k.ai || null, d = kdurum(k), id = escAttr(k.id), bos = !(k.ceviri || "").trim();
+  const dl = kdil(k), renk = (DILLER[dl] || {}).renk || "#9ca3af", secili = kv.secili.has(k.id);
+  const chips = a ? (a.tur ? '<span class="kl-chip">' + escapeHtml(a.tur) + "</span>" : "") + (a.seviye ? '<span class="kl-chip lv">' + escapeHtml(a.seviye) + "</span>" : "") + (a.okunus ? '<span class="kl-chip">' + escapeHtml(a.okunus) + "</span>" : "") : "";
+  const turler = (k.sozluk || []).slice(0, 2).map(t => '<div class="kl-tur"><b>' + escapeHtml(t.tur || "") + "</b>" + escapeHtml((t.anlamlar || []).slice(0, 4).join(" · ")) + "</div>").join("");
+  const ornek = (k.ornekler || [])[0];
+  const ai = a ? '<details class="kl-more" data-id="' + id + '"' + (kelimeAcik.has(k.id) ? " open" : "") + "><summary>Kök, ekler, formlar</summary>" + kelimeAiHtml(a) + "</details>"
+               : '<div class="kl-ai-wait">⏳ Yapay zeka inceliyor… kısa süre içinde eklenir</div>';
+  const sonraki = kSonraki(k);
+  return '<div class="kc' + (kv.gorunum === "liste" ? " liste" : "") + (k.ogrenildi ? " ok" : "") + (secili ? " sel" : "") + '" style="--lc:' + renk + '" data-id="' + id + '">' +
+    (kv.sec ? '<input type="checkbox" class="kc-cb" data-id="' + id + '"' + (secili ? " checked" : "") + ">" : "") +
+    '<div class="kc-top"><div class="kc-word">' + escapeHtml(k.kelime || "") + "</div>" +
+    '<div class="kc-ic"><button type="button" data-kl="ses" title="Seslendir">🔊</button><button type="button" data-kl="fav" class="' + (k.fav ? "on" : "") + '" title="Favori">' + (k.fav ? "★" : "☆") + "</button></div></div>" +
+    '<div class="kc-tr">' + (bos ? '<span class="kl-ai-wait">⏳ çevriliyor…</span>' : escapeHtml(k.ceviri)) + "</div>" +
+    '<div class="kl-chips"><span class="kc-st ' + d + '">' + DURUM_AD[d] + "</span>" + chips + "</div>" +
+    (dl === "?" ? '<div class="kc-warn" data-kl="edit">❓ Dili belirsiz — seçmek için dokun</div>' : "") +
+    turler + (ornek ? '<div class="kl-ex">› ' + escapeHtml(ornek) + "</div>" : "") +
+    (k.not ? '<div class="kc-not">📝 ' + escapeHtml(k.not) + "</div>" : "") + ai +
+    '<div class="kl-meta"><span>' + escapeHtml(kelimeTarih(k.eklenme)) + (sonraki ? " · ⏰ " + sonraki : "") + (k.srs && k.srs.hata ? " · " + k.srs.hata + " hata" : "") + "</span>" +
+    '<span class="kl-act"><button type="button" data-kl="ogren" title="Öğrendim / geri al">' + (k.ogrenildi ? "↺" : "✓") + '</button><button type="button" data-kl="ai" title="Yapay zekayla yeniden incele">✨</button>' +
+    '<button type="button" data-kl="edit" title="Düzenle">✎</button><button type="button" data-kl="sil" title="Sil">🗑</button></span></div></div>';
+}
+
+function kGridCiz(){
+  const grid = document.getElementById("kelimeGrid");
+  const liste = kFiltrele(), goster = liste.slice(0, kv.limit);
+  grid.className = "kl-grid" + (kv.gorunum === "liste" ? " liste" : "");
+  grid.innerHTML = goster.length ? goster.map(kKartHtml).join("") :
+    '<div class="field-hint" style="grid-column:1/-1;"><span>' + (kelimelerDil().length ? "Bu filtreye uyan kelime yok." : "Bu dilde henüz kelime yok. Çeviri programından ya da ＋ Kelime ekle ile ekleyebilirsin.") + "</span></div>";
+  const daha = document.getElementById("kvDaha");
+  daha.style.display = liste.length > kv.limit ? "" : "none"; daha.textContent = "Daha fazla göster (" + (liste.length - kv.limit) + ")";
+  document.getElementById("kvGorunum").textContent = kv.gorunum === "liste" ? "▦" : "☰";
+}
+
+function renderKelimeler(){
+  if (!document.getElementById("kelimeGrid")) return;
+  const bugun = new Date().toISOString().slice(0, 10), bg = kelimeler.filter(k => (k.eklenme || "").startsWith(bugun)).length;
+  document.getElementById("kelimeSayac").textContent = kelimeler.length ? kelimeler.length + " kelime · bugün " + bg + " yeni" : "";
+  kTabsCiz(); kChipsCiz(); kGridCiz();
+  document.getElementById("kvBulk").style.display = kv.sec ? "flex" : "none";
+  document.getElementById("kvBulkN").textContent = kv.secili.size + " seçili";
+  document.getElementById("kvSec").classList.toggle("on", kv.sec);
+  if (typeof srsBannerCiz === "function") srsBannerCiz();
+}
+
+// ---------- ekle / düzenle penceresi ----------
+function kModalKapat(){ const m = document.getElementById("kvModal"); m.style.display = "none"; m.innerHTML = ""; }
+function kModalAc(k){
+  const ekle = !k, m = document.getElementById("kvModal");
+  let dil = ekle ? (DILLER[kv.dil] ? kv.dil : "") : (kdil(k) === "?" ? "" : kdil(k));
+  const ilkDil = dil;
+  const seg = (ekle ? '<button type="button" data-v="">Otomatik</button>' : "") + Object.keys(DILLER).map(d => '<button type="button" data-v="' + d + '">' + DILLER[d].bayrak + " " + DILLER[d].ad + "</button>").join("");
+  m.innerHTML = '<div class="kv-dlg"><h4>' + (ekle ? "＋ Kelime ekle" : "✎ Kelimeyi düzenle") + "</h4>" +
+    '<label>Kelime / ifade<input id="kmKelime" maxlength="300" value="' + escAttr(ekle ? "" : k.kelime) + '"></label>' +
+    '<div class="kv-lbl">Dil' + (ekle ? " (Otomatik: yapay zeka belirler)" : "") + '</div><div class="kv-seg" id="kmDil">' + seg + "</div>" +
+    '<div id="kmHedefW" style="display:none;"><label>Türkçe kelimenin çevirisi hangi dilde olsun?<select id="kmHedef"><option value="en">İngilizce</option><option value="de">Almanca</option></select></label></div>' +
+    '<label>Çeviri' + (ekle ? " (boş bırakırsan yapay zeka çevirir)" : "") + '<input id="kmCeviri" maxlength="500" value="' + escAttr(ekle ? "" : (k.ceviri || "")) + '"></label>' +
+    '<label>Notum<textarea id="kmNot" rows="2" maxlength="400">' + escapeHtml(ekle ? "" : (k.not || "")) + "</textarea></label>" +
+    '<div class="kv-row"><button class="kv-btn" id="kmIptal" type="button">Vazgeç</button><button class="kv-btn pri" id="kmKaydet" type="button">' + (ekle ? "Ekle" : "Kaydet") + "</button></div></div>";
+  m.style.display = "flex";
+  const boya = () => { m.querySelectorAll("#kmDil button").forEach(b => b.classList.toggle("on", b.dataset.v === dil)); document.getElementById("kmHedefW").style.display = (ekle && dil === "tr") ? "" : "none"; };
+  m.querySelectorAll("#kmDil button").forEach(b => b.onclick = () => { dil = b.dataset.v; boya(); });
+  boya();
+  document.getElementById("kmIptal").onclick = kModalKapat;
+  setTimeout(() => document.getElementById("kmKelime").focus(), 50);
+  document.getElementById("kmKaydet").onclick = async (ev) => {
+    const kelime = document.getElementById("kmKelime").value.trim(), ceviri = document.getElementById("kmCeviri").value.trim(), not = document.getElementById("kmNot").value.trim();
+    if (!kelime){ toast("Kelime boş olamaz", false); return; }
+    const btn = ev.currentTarget; btn.disabled = true;
+    try{
+      if (ekle){
+        if (kelimeler.some(x => (x.kelime || "").trim().toLowerCase() === kelime.toLowerCase()) && !confirm("Bu kelime zaten listede. Yine de eklensin mi?")){ btn.disabled = false; return; }
+        const hedef = dil === "tr" ? document.getElementById("kmHedef").value : (dil ? "tr" : "");
+        const d = await kApi("/api/kelime", {kelime, ceviri, dil, hedef, dil_elle: !!dil});
+        toast(d.yeni ? "Eklendi, yapay zeka inceliyor ✨" : "Bu kelime zaten kayıtlı", !!d.yeni);
+        if (dil && DILLER[dil]){ kv.dil = dil; localStorage.setItem("kelimeDil", dil); }
+      } else {
+        const degisti = dil !== ilkDil || kelime !== k.kelime;
+        const guncelle = {kelime, ceviri, not};
+        if (dil && dil !== ilkDil){ guncelle.dil = dil; guncelle.hedef = dil === "tr" ? "en" : "tr"; guncelle.dil_elle = true; guncelle.ai_hata = 0; }
+        await updateDoc(doc(db, "kelimeler", k.id), guncelle);
+        if (degisti || !ceviri){ toast("Kaydedildi, yapay zeka yeniden inceliyor…", true); kelimeAiYenile(k.id, null); }
+        else toast("Kaydedildi", true);
+      }
+      kModalKapat();
+    }catch(err){ toast("Olmadı: " + String((err && err.message) || err).slice(0, 80), false, 3000); btn.disabled = false; }
+  };
+}
+
+// ---------- toplu işlemler + dışa aktarma ----------
+async function kToplu(islem){
+  const idler = [...kv.secili];
+  if (islem === "hepsi"){ kFiltrele().forEach(k => kv.secili.add(k.id)); renderKelimeler(); return; }
+  if (islem === "kapat"){ kv.sec = false; kv.secili.clear(); renderKelimeler(); return; }
+  if (!idler.length){ toast("Önce kelime seç", false); return; }
+  const sec = idler.map(id => kelimeler.find(k => k.id === id)).filter(Boolean);
+  try{
+    if (islem === "sil"){ if (!confirm(sec.length + " kelime silinsin mi?")) return; await Promise.all(sec.map(k => deleteDoc(doc(db, "kelimeler", k.id)))); }
+    else if (islem === "fav"){ const yeni = !sec.every(k => k.fav); await Promise.all(sec.map(k => updateDoc(doc(db, "kelimeler", k.id), {fav: yeni}))); }
+    else if (islem === "ogren"){ const yeni = !sec.every(k => k.ogrenildi); await Promise.all(sec.map(k => updateDoc(doc(db, "kelimeler", k.id), {ogrenildi: yeni}))); }
+    else if (islem === "askida"){
+      const yeniDeger = !sec.every(k => k.srs && k.srs.askida);
+      await Promise.all(sec.map(k => { const srs = Object.assign({durum: "yeni", adim: 0, ef: SRS.ef, aralik: 0, hata: 0, tekrar: 0}, k.srs || {}, {askida: yeniDeger}); k.srs = srs; return updateDoc(doc(db, "kelimeler", k.id), {srs}); }));
+    }
+    else if (DILLER[islem]){
+      await Promise.all(sec.map(k => updateDoc(doc(db, "kelimeler", k.id), {dil: islem, hedef: islem === "tr" ? "en" : "tr", dil_elle: true, ai: null, ai_hata: 0})));
+      toast("Dil değişti; yapay zeka bu kelimeleri yeniden inceleyecek", true);
+    }
+    if (islem === "sil") kv.secili.clear();
+  }catch(err){ toast("İşlem başarısız oldu", false); }
+}
+
+function kIndir(){
+  const l = kelimelerDil();
+  if (!l.length){ toast("Bu dilde aktarılacak kelime yok", false); return; }
+  const t = x => String(x || "").replace(/[\t\r\n]+/g, " ");
+  const satirlar = l.map(k => [k.kelime, k.ceviri, (k.sozluk || []).map(x => (x.anlamlar || []).slice(0, 3).join(", ")).join("; "), (k.ai || {}).kok, (k.ornekler || [])[0], (k.ai || {}).cogul].map(t).join("\t"));
+  const blob = new Blob(["\ufeff" + satirlar.join("\n")], {type: "text/plain;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "kelimeler-" + kv.dil + ".txt";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(l.length + " kelime indirildi (sekmeyle ayrılmış: Anki / Excel)", true);
+}
+
+// ---------- olaylar ----------
 onSnapshot(query(kelimelerRef, orderBy("eklenme", "desc")), (snap) => {
   kelimeler = snap.docs.map(d => Object.assign({id: d.id}, d.data()));
+  if (!kv.ilk){
+    kv.ilk = true;
+    const say = d => kelimeler.filter(k => kdil(k) === d).length;
+    if (!say(kv.dil)){ const en = ["en", "de", "tr"].sort((x, y) => say(y) - say(x))[0]; if (say(en)) kv.dil = en; }
+  }
   renderKelimeler();
 }, (err) => console.warn("Kelimeler okunamadı", err));
 
-document.getElementById("kelimeAra").addEventListener("input", (e) => { kelimeAra = e.target.value; renderKelimeler(); });
-document.querySelectorAll("#kelimeFiltre .kl-f").forEach(b => b.addEventListener("click", () => {
-  kelimeFiltre = b.dataset.f;
-  document.querySelectorAll("#kelimeFiltre .kl-f").forEach(x => x.classList.toggle("active", x === b));
-  renderKelimeler();
-}));
+document.getElementById("kvTabs").addEventListener("click", (e) => {
+  const b = e.target.closest(".kv-tab"); if (!b) return;
+  kv.dil = b.dataset.d; kv.limit = 60; kv.filtre = "hepsi"; kv.secili.clear(); localStorage.setItem("kelimeDil", kv.dil); renderKelimeler();
+});
+document.getElementById("kelimeFiltre").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; kv.filtre = b.dataset.f; kv.limit = 60; renderKelimeler(); });
+document.getElementById("kelimeAra").addEventListener("input", (e) => { kv.ara = e.target.value; kv.limit = 60; kGridCiz(); });
+document.getElementById("kvSirala").value = kv.sirala;
+document.getElementById("kvSirala").addEventListener("change", (e) => { kv.sirala = e.target.value; localStorage.setItem("kvSirala", kv.sirala); kGridCiz(); });
+document.getElementById("kvSeviye").addEventListener("change", (e) => { kv.seviye = e.target.value; kv.limit = 60; kGridCiz(); });
+document.getElementById("kvGorunum").addEventListener("click", () => { kv.gorunum = kv.gorunum === "liste" ? "kart" : "liste"; localStorage.setItem("kvGorunum", kv.gorunum); kGridCiz(); });
+document.getElementById("kvDaha").addEventListener("click", () => { kv.limit += 60; kGridCiz(); });
+document.getElementById("kvEkle").addEventListener("click", () => kModalAc(null));
+document.getElementById("kvSec").addEventListener("click", () => { kv.sec = !kv.sec; if (!kv.sec) kv.secili.clear(); renderKelimeler(); });
+document.getElementById("kvIndir").addEventListener("click", kIndir);
+document.getElementById("kvModal").addEventListener("mousedown", (e) => { if (e.target.id === "kvModal") kModalKapat(); });
+document.getElementById("kvBulk").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) kToplu(b.dataset.b); });
+document.getElementById("kvBulkDil").addEventListener("change", (e) => { const v = e.target.value; e.target.value = ""; if (v) kToplu(v); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && document.getElementById("kvModal").style.display === "flex") kModalKapat(); });
+
 document.getElementById("kelimeGrid").addEventListener("toggle", (e) => {
   const d = e.target;
   if (d && d.tagName === "DETAILS" && d.dataset.id){ d.open ? kelimeAcik.add(d.dataset.id) : kelimeAcik.delete(d.dataset.id); }
 }, true);
 document.getElementById("kelimeGrid").addEventListener("click", async (e) => {
+  const kart = e.target.closest(".kc"); if (!kart) return;
+  const id = kart.dataset.id, k = kelimeler.find(x => x.id === id); if (!k) return;
   const b = e.target.closest("[data-kl]");
-  if (!b) return;
-  const id = b.dataset.id;
-  if (b.dataset.kl === "ai"){ kelimeAiYenile(id, b); return; }
+  if (e.target.classList.contains("kc-cb")){ e.target.checked ? kv.secili.add(id) : kv.secili.delete(id); renderKelimeler(); return; }
+  if (!b){ if (kv.sec && !e.target.closest("details,summary")){ kv.secili.has(id) ? kv.secili.delete(id) : kv.secili.add(id); renderKelimeler(); } return; }
+  const islem = b.dataset.kl;
+  if (islem === "ses"){ srsSes(k); return; }
+  if (islem === "edit"){ kModalAc(k); return; }
+  if (islem === "ai"){ kelimeAiYenile(id, b); return; }
   try{
-    if (b.dataset.kl === "ogren"){
-      const k = kelimeler.find(x => x.id === id);
-      await updateDoc(doc(db, "kelimeler", id), {ogrenildi: !(k && k.ogrenildi)});
-    } else if (b.dataset.kl === "sil"){
-      if (!confirm("Bu kelime silinsin mi?")) return;
-      await deleteDoc(doc(db, "kelimeler", id));
-    }
+    if (islem === "fav") await updateDoc(doc(db, "kelimeler", id), {fav: !k.fav});
+    else if (islem === "ogren") await updateDoc(doc(db, "kelimeler", id), {ogrenildi: !k.ogrenildi});
+    else if (islem === "sil"){ if (!confirm("Bu kelime silinsin mi?")) return; await deleteDoc(doc(db, "kelimeler", id)); }
   }catch(err){ toast("İşlem başarısız oldu", false); }
 });
 
@@ -5847,15 +6103,16 @@ function srsEtiket(s, puan){
 }
 
 function srsDurumlar(){
+  const L = kelimelerDil().filter(k => (k.ceviri || "").trim());   // yalnızca seçili dilin kelimeleri
   const simdi = Date.now(), sinir = srsGunEkle(1), gb = srsGunBasi().getTime();
-  const aktif = kelimeler.filter(k => !(k.srs && k.srs.askida));
+  const aktif = L.filter(k => !(k.srs && k.srs.askida));
   const ogr = aktif.filter(k => srsOgreniyor(k.srs) && k.srs.due <= simdi);
   const tek = aktif.filter(k => k.srs && k.srs.durum === "tekrar" && k.srs.due < sinir).sort((a,b) => a.srs.due - b.srs.due);
-  const bugunYeni = kelimeler.filter(k => k.srs && k.srs.ilk >= gb).length;
+  const bugunYeni = L.filter(k => k.srs && k.srs.ilk >= gb).length;
   const yeniHavuz = aktif.filter(k => !k.srs || k.srs.durum === "yeni").sort((a,b) => (a.eklenme||"").localeCompare(b.eklenme||""));
   const yeni = yeniHavuz.slice(0, Math.max(0, srsYeniLimit - bugunYeni));
   const sonra = aktif.filter(k => srsOgreniyor(k.srs) && k.srs.due > simdi && k.srs.due <= simdi + SRS.ogrenAhead*DK);
-  return {ogr, tek, yeni, sonra, yeniHavuz, aktif, askida: kelimeler.filter(k => k.srs && k.srs.askida)};
+  return {ogr, tek, yeni, sonra, yeniHavuz, aktif, askida: L.filter(k => k.srs && k.srs.askida)};
 }
 
 function srsSiradaki(){
@@ -5875,7 +6132,7 @@ function srsBannerCiz(){
     "<div><b>" + olgun + "</b>olgun (21g+)</div>" +
     "<div><b>" + d.yeniHavuz.length + "</b>hiç görülmemiş</div>";
   document.getElementById("srsBasla").disabled = !(bekleyen || d.sonra.length);
-  document.getElementById("srsBasla").textContent = bekleyen ? "🎴 Çalışmaya başla (" + bekleyen + ")" : "🎉 Bugünlük bitti";
+  document.getElementById("srsBasla").textContent = bekleyen ? "🎴 " + ((DILLER[kv.dil] || {}).ad || "") + " çalış (" + bekleyen + ")" : "🎉 Bugünlük bitti";
   const ask = document.getElementById("srsAskidaGeri");
   ask.style.display = d.askida.length ? "" : "none"; ask.textContent = "Askıdakileri geri al (" + d.askida.length + ")";
   const gunler = [0,1,2,3,4,5,6].map(i => d.aktif.filter(k => k.srs && k.srs.durum === "tekrar" && k.srs.due >= (i ? srsGunEkle(i) : 0) && k.srs.due < srsGunEkle(i+1)).length);
@@ -5971,7 +6228,7 @@ document.getElementById("srsYeniLimit").addEventListener("change", (e) => {
   srsYeniLimit = Math.max(0, parseInt(e.target.value || "0", 10) || 0); localStorage.setItem("srsYeniLimit", String(srsYeniLimit)); srsBannerCiz();
 });
 document.getElementById("srsAskidaGeri").addEventListener("click", async () => {
-  const liste = kelimeler.filter(k => k.srs && k.srs.askida);
+  const liste = kelimelerDil().filter(k => k.srs && k.srs.askida);
   for (const k of liste){ const yeni = Object.assign({}, k.srs, {askida:false}); k.srs = yeni; try{ await updateDoc(doc(db, "kelimeler", k.id), {srs: yeni}); }catch(e){} }
   srsBannerCiz();
 });
