@@ -863,6 +863,30 @@
   .kl-tip{color:var(--text);}
   .kl-warn{color:var(--danger);}
   .kl-ai-wait{font-size:11.5px;color:var(--text-faint);}
+  .srs-ban{background:var(--bg-soft);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;}
+  .srs-cnt{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--text-dim);}
+  .srs-cnt b{font-size:20px;display:block;font-family:var(--serif);}
+  .srs-cnt .n b{color:#3b82f6;} .srs-cnt .l b{color:#e5484d;} .srs-cnt .r b{color:#16a34a;}
+  .srs-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .srs-go{padding:9px 18px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:14px;cursor:pointer;font-family:var(--sans);}
+  .srs-go:disabled{opacity:.45;cursor:default;}
+  .srs-row select,.srs-row input{padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-family:var(--sans);}
+  .srs-row input{width:52px;}
+  .srs-fc{display:flex;gap:3px;align-items:flex-end;height:34px;}
+  .srs-fc i{display:block;width:16px;background:var(--accent);opacity:.7;border-radius:3px 3px 0 0;min-height:2px;}
+  .srs-modal{position:fixed;inset:0;z-index:9999;background:var(--bg);display:none;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));}
+  .srs-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text-dim);}
+  .srs-top button{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:6px 10px;margin-left:6px;cursor:pointer;font-size:13px;}
+  .srs-kart{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:16px 4px;max-width:640px;width:100%;margin:0 auto;}
+  .srs-big{font-family:var(--serif);font-size:clamp(28px,7vw,44px);font-weight:600;word-break:break-word;}
+  .srs-ans{color:var(--accent);font-size:clamp(22px,5vw,32px);font-weight:600;}
+  .srs-kart hr{width:100%;border:0;border-top:1px solid var(--border);margin:10px 0;}
+  .srs-kart .kl-ai{text-align:left;width:100%;}
+  .srs-alt{display:flex;gap:8px;max-width:640px;width:100%;margin:0 auto;padding-top:8px;}
+  .srs-alt button{flex:1;padding:12px 4px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:14px;font-weight:600;font-family:var(--sans);}
+  .srs-alt button small{display:block;font-weight:400;font-size:11px;color:var(--text-faint);margin-top:2px;}
+  .srs-alt .p1{border-color:#e5484d;} .srs-alt .p2{border-color:#f59e0b;} .srs-alt .p3{border-color:#16a34a;} .srs-alt .p4{border-color:#3b82f6;}
+  .srs-alt .show{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
 </style>
 </head>
 <body>
@@ -1125,9 +1149,25 @@
       <input type="file" id="ntJsonIn" accept=".json,application/json" hidden>
     </div>
 
+
+    <div class="srs-modal" id="srsModal">
+      <div class="srs-top"><span id="srsSayac"></span><span><button id="srsSes" type="button" title="Seslendir (S)">🔊</button><button id="srsGeri" type="button" title="Geri al (Z)">↶</button><button id="srsAskida" type="button" title="Bu kartı askıya al">⏸</button><button id="srsKapat" type="button" title="Kapat (Esc)">✕</button></span></div>
+      <div class="srs-kart" id="srsKart"></div>
+      <div class="srs-alt" id="srsAlt"></div>
+    </div>
     <div class="view-pane" id="paneKelimeler" style="display:none;">
       <div class="panel-card">
         <h3>📚 Kelimelerim <span id="kelimeSayac" style="font-size:12px;font-weight:400;color:var(--text-faint);margin-left:6px;"></span></h3>
+        <div class="srs-ban" id="srsBan">
+          <div class="srs-cnt" id="srsCnt"></div>
+          <div class="srs-row">
+            <button class="srs-go" id="srsBasla" type="button">🎴 Çalışmaya başla</button>
+            <select id="srsYon" title="Kart yönü"><option value="ileri">Kelime → Anlam</option><option value="ters">Anlam → Kelime</option><option value="karisik">Karışık</option></select>
+            <label style="font-size:12px;color:var(--text-dim);">Günlük yeni <input type="number" id="srsYeniLimit" min="0" max="200"></label>
+            <button class="kl-f" id="srsAskidaGeri" type="button" style="display:none;">Askıdakileri geri al</button>
+          </div>
+          <div class="srs-fc" id="srsFc" title="Önümüzdeki 7 günde tekrar edilecek kart sayısı"></div>
+        </div>
         <div class="kl-bar">
           <input type="text" id="kelimeAra" placeholder="Kelime ara…" maxlength="60" autocomplete="off">
           <span id="kelimeFiltre" style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -5679,6 +5719,7 @@ async function kelimeAiYenile(id, btn){
 function renderKelimeler(){
   const grid = document.getElementById("kelimeGrid");
   if (!grid) return;
+  if (typeof srsBannerCiz === "function") srsBannerCiz();
   const ogr = kelimeler.filter(k => k.ogrenildi).length;
   document.getElementById("kelimeSayac").textContent = kelimeler.length ? kelimeler.length + " kelime · " + ogr + " öğrenildi" : "";
   const q = kelimeAra.trim().toLocaleLowerCase("tr");
@@ -5752,6 +5793,197 @@ document.getElementById("kelimeGrid").addEventListener("click", async (e) => {
       await deleteDoc(doc(db, "kelimeler", id));
     }
   }catch(err){ toast("İşlem başarısız oldu", false); }
+});
+
+// ---- Kelime çalışma: Anki benzeri aralıklı tekrar ----
+const SRS = {adimlar:[1,10], yenidenAdim:10, mezuniyet:1, kolayGun:4, ef:2.5, minEf:1.3, kolayBonus:1.3, zorCarpan:1.2, lapse:0.5, ogrenAhead:20};
+const DK = 60000;
+let srsYeniLimit = parseInt(localStorage.getItem("srsYeniLimit") || "10", 10);
+let srsYon = localStorage.getItem("srsYon") || "ileri";
+const srsO = {k:null, goster:false, geri:null, aktif:false, sayi:0};
+
+function srsGunBasi(){ const d = new Date(); d.setHours(4,0,0,0); if (Date.now() < d.getTime()) d.setDate(d.getDate()-1); return d; }
+function srsGunEkle(n){ const d = new Date(srsGunBasi()); d.setDate(d.getDate()+n); return d.getTime(); }
+const srsOgreniyor = s => s && (s.durum === "ogreniyor" || s.durum === "yenidenOgr");
+
+function srsSonraki(s, puan, onizleme){
+  const simdi = Date.now();
+  const n = Object.assign({durum:"yeni", adim:0, ef:SRS.ef, aralik:0, hata:0, tekrar:0}, s || {});
+  n.tekrar++; n.son = simdi; if (!n.ilk) n.ilk = simdi;
+  const mezun = g => { n.durum = "tekrar"; n.aralik = g; n.adim = 0; n.due = srsGunEkle(g); };
+  if (n.durum === "yeni" || n.durum === "ogreniyor"){
+    n.durum = "ogreniyor";
+    const adim = Math.min(n.adim, SRS.adimlar.length-1);
+    if (puan === 1){ n.adim = 0; n.due = simdi + SRS.adimlar[0]*DK; }
+    else if (puan === 2){ n.due = simdi + SRS.adimlar[adim]*DK; }
+    else if (puan === 3){
+      if (n.adim+1 >= SRS.adimlar.length) mezun(SRS.mezuniyet);
+      else { n.adim++; n.due = simdi + SRS.adimlar[n.adim]*DK; }
+    } else mezun(SRS.kolayGun);
+  } else if (n.durum === "yenidenOgr"){
+    if (puan <= 2) n.due = simdi + SRS.yenidenAdim*DK;
+    else { n.durum = "tekrar"; n.aralik = Math.max(1, puan === 4 ? Math.round(n.yeniAralik*1.5) : n.yeniAralik); n.due = srsGunEkle(n.aralik); }
+  } else {
+    const eski = n.aralik;
+    if (puan === 1){
+      n.hata++; n.ef = Math.max(SRS.minEf, n.ef-0.2); n.yeniAralik = Math.max(1, Math.round(eski*SRS.lapse));
+      n.durum = "yenidenOgr"; n.due = simdi + SRS.yenidenAdim*DK;
+    } else {
+      let a;
+      if (puan === 2){ n.ef = Math.max(SRS.minEf, n.ef-0.15); a = Math.round(eski*SRS.zorCarpan); }
+      else if (puan === 3){ a = Math.round(eski*n.ef); }
+      else { n.ef += 0.15; a = Math.round(eski*n.ef*SRS.kolayBonus); }
+      if (!onizleme && a >= 3) a += Math.round(a*0.05*(Math.random()*2-1));   // hafif rastgelelik: kartlar aynı güne yığılmasın
+      n.aralik = Math.max(eski+1, a); n.due = srsGunEkle(n.aralik);
+    }
+  }
+  return n;
+}
+
+function srsEtiket(s, puan){
+  const n = srsSonraki(s, puan, true);
+  if (srsOgreniyor(n)){ const dk = Math.max(1, Math.round((n.due - Date.now())/DK)); return dk < 60 ? dk + " dk" : Math.round(dk/60) + " sa"; }
+  return n.aralik < 30 ? n.aralik + " g" : (n.aralik < 365 ? Math.round(n.aralik/30) + " ay" : (n.aralik/365).toFixed(1) + " yıl");
+}
+
+function srsDurumlar(){
+  const simdi = Date.now(), sinir = srsGunEkle(1), gb = srsGunBasi().getTime();
+  const aktif = kelimeler.filter(k => !(k.srs && k.srs.askida));
+  const ogr = aktif.filter(k => srsOgreniyor(k.srs) && k.srs.due <= simdi);
+  const tek = aktif.filter(k => k.srs && k.srs.durum === "tekrar" && k.srs.due < sinir).sort((a,b) => a.srs.due - b.srs.due);
+  const bugunYeni = kelimeler.filter(k => k.srs && k.srs.ilk >= gb).length;
+  const yeniHavuz = aktif.filter(k => !k.srs || k.srs.durum === "yeni").sort((a,b) => (a.eklenme||"").localeCompare(b.eklenme||""));
+  const yeni = yeniHavuz.slice(0, Math.max(0, srsYeniLimit - bugunYeni));
+  const sonra = aktif.filter(k => srsOgreniyor(k.srs) && k.srs.due > simdi && k.srs.due <= simdi + SRS.ogrenAhead*DK);
+  return {ogr, tek, yeni, sonra, yeniHavuz, aktif, askida: kelimeler.filter(k => k.srs && k.srs.askida)};
+}
+
+function srsSiradaki(){
+  const d = srsDurumlar();
+  return d.ogr.sort((a,b) => a.srs.due - b.srs.due)[0] || d.tek[0] || d.yeni[0] || d.sonra.sort((a,b) => a.srs.due - b.srs.due)[0] || null;
+}
+
+function srsBannerCiz(){
+  const cnt = document.getElementById("srsCnt");
+  if (!cnt) return;
+  const d = srsDurumlar();
+  const olgun = d.aktif.filter(k => k.srs && k.srs.durum === "tekrar" && k.srs.aralik >= 21).length;
+  const bekleyen = d.ogr.length + d.tek.length + d.yeni.length;
+  cnt.innerHTML = '<div class="n"><b>' + d.yeni.length + "</b>yeni</div>" +
+    '<div class="l"><b>' + d.ogr.length + "</b>öğreniliyor</div>" +
+    '<div class="r"><b>' + d.tek.length + "</b>tekrar</div>" +
+    "<div><b>" + olgun + "</b>olgun (21g+)</div>" +
+    "<div><b>" + d.yeniHavuz.length + "</b>hiç görülmemiş</div>";
+  document.getElementById("srsBasla").disabled = !(bekleyen || d.sonra.length);
+  document.getElementById("srsBasla").textContent = bekleyen ? "🎴 Çalışmaya başla (" + bekleyen + ")" : "🎉 Bugünlük bitti";
+  const ask = document.getElementById("srsAskidaGeri");
+  ask.style.display = d.askida.length ? "" : "none"; ask.textContent = "Askıdakileri geri al (" + d.askida.length + ")";
+  const gunler = [0,1,2,3,4,5,6].map(i => d.aktif.filter(k => k.srs && k.srs.durum === "tekrar" && k.srs.due >= (i ? srsGunEkle(i) : 0) && k.srs.due < srsGunEkle(i+1)).length);
+  const mx = Math.max(1, ...gunler);
+  document.getElementById("srsFc").innerHTML = gunler.map((n, i) => '<i style="height:' + Math.round(n/mx*30+2) + 'px" title="' + (i ? i + " gün sonra" : "Bugün") + ": " + n + '"></i>').join("");
+  document.getElementById("srsYon").value = srsYon;
+  const li = document.getElementById("srsYeniLimit"); if (document.activeElement !== li) li.value = srsYeniLimit;
+}
+
+function srsSes(k){
+  try{
+    const m = {en:"en-US", de:"de-DE", tr:"tr-TR", fr:"fr-FR", es:"es-ES", it:"it-IT"};
+    const u = new SpeechSynthesisUtterance(k.kelime); u.lang = m[k.dil] || k.dil || "en-US";
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function srsTers(k){
+  if (srsYon === "ters") return true;
+  if (srsYon === "karisik"){ let h = 0; const t = k.id + (k.srs ? k.srs.tekrar : 0); for (let i = 0; i < t.length; i++) h = (h*31 + t.charCodeAt(i)) | 0; return h % 2 === 0; }
+  return false;
+}
+
+function srsCiz(){
+  const kart = document.getElementById("srsKart"), alt = document.getElementById("srsAlt");
+  const k = srsO.k = srsSiradaki();
+  const d = srsDurumlar();
+  document.getElementById("srsSayac").textContent = d.yeni.length + " yeni · " + d.ogr.length + " öğreniliyor · " + d.tek.length + " tekrar";
+  document.getElementById("srsGeri").disabled = !srsO.geri;
+  if (!k){
+    kart.innerHTML = '<div class="srs-big">🎉</div><div>Bugünlük bu kadar!</div><div style="color:var(--text-faint);font-size:13px;">' + srsO.sayi + " kart çalıştın</div>";
+    alt.innerHTML = '<button class="show" id="srsBitti" type="button">Kapat</button>';
+    document.getElementById("srsBitti").onclick = srsKapat; return;
+  }
+  const ters = srsTers(k), a = k.ai || {};
+  const sozluk = (k.sozluk || []).slice(0,3).map(t => '<div class="kl-tur"><b>' + escapeHtml(t.tur || "") + "</b>" + escapeHtml((t.anlamlar || []).slice(0,5).join(" · ")) + "</div>").join("");
+  const chips = (a.tur || a.okunus) ? '<div class="kl-chips">' + (a.tur ? '<span class="kl-chip">' + escapeHtml(a.tur) + "</span>" : "") + (a.okunus ? '<span class="kl-chip">' + escapeHtml(a.okunus) + "</span>" : "") + "</div>" : "";
+  const ornek = (k.ornekler || [])[0];
+  const on = ters ? '<div class="srs-ans" style="color:var(--text)">' + escapeHtml(k.ceviri || "") + "</div>" : '<div class="srs-big">' + escapeHtml(k.kelime || "") + "</div>" + chips;
+  let html = on;
+  if (srsO.goster){
+    html += "<hr>" + (ters ? '<div class="srs-big">' + escapeHtml(k.kelime || "") + "</div>" + chips : '<div class="srs-ans">' + escapeHtml(k.ceviri || "") + "</div>") + sozluk +
+      (ornek ? '<div class="kl-ex">› ' + escapeHtml(ornek) + "</div>" : "") + (a.kok || a.formlar ? kelimeAiHtml(a) : "");
+    alt.innerHTML = [1,2,3,4].map(p => '<button class="p' + p + '" data-p="' + p + '" type="button">' + ["Tekrar","Zor","İyi","Kolay"][p-1] + "<small>" + srsEtiket(k.srs, p) + "</small></button>").join("");
+    alt.querySelectorAll("button").forEach(b => b.onclick = () => srsCevapla(parseInt(b.dataset.p, 10)));
+  } else {
+    alt.innerHTML = '<button class="show" id="srsGoster" type="button">Cevabı göster <small style="color:inherit;opacity:.7">Boşluk</small></button>';
+    document.getElementById("srsGoster").onclick = () => { srsO.goster = true; srsCiz(); };
+  }
+  kart.innerHTML = html;
+  if (!ters && !srsO.goster) srsSes(k);
+}
+
+async function srsCevapla(puan){
+  const k = srsO.k; if (!k) return;
+  const onceki = k.srs || null, yeni = srsSonraki(onceki, puan);
+  srsO.geri = {id: k.id, onceki}; srsO.sayi++; srsO.goster = false;
+  k.srs = yeni;   // anında yerel güncelle; Firestore arkadan yazılır
+  srsCiz();
+  try{ await updateDoc(doc(db, "kelimeler", k.id), {srs: yeni}); }
+  catch(e){ toast("Kaydedilemedi, bağlantını kontrol et", false); }
+}
+
+async function srsGeriAl(){
+  const g = srsO.geri; if (!g) return;
+  const k = kelimeler.find(x => x.id === g.id); if (!k) return;
+  k.srs = g.onceki; srsO.geri = null; srsO.goster = false; srsO.sayi = Math.max(0, srsO.sayi-1);
+  srsCiz();
+  try{ await updateDoc(doc(db, "kelimeler", g.id), {srs: g.onceki}); }catch(e){ toast("Geri alınamadı", false); }
+}
+
+async function srsAskiya(){
+  const k = srsO.k; if (!k) return;
+  const yeni = Object.assign({durum:"yeni", adim:0, ef:SRS.ef, aralik:0, hata:0, tekrar:0}, k.srs || {}, {askida:true});
+  srsO.geri = {id: k.id, onceki: k.srs || null}; k.srs = yeni; srsO.goster = false; srsCiz();
+  try{ await updateDoc(doc(db, "kelimeler", k.id), {srs: yeni}); }catch(e){ toast("Kaydedilemedi", false); }
+}
+
+function srsBasla(){
+  srsO.aktif = true; srsO.goster = false; srsO.geri = null; srsO.sayi = 0;
+  document.getElementById("srsModal").style.display = "flex";
+  srsCiz();
+}
+function srsKapat(){ srsO.aktif = false; document.getElementById("srsModal").style.display = "none"; srsBannerCiz(); }
+
+document.getElementById("srsBasla").addEventListener("click", srsBasla);
+document.getElementById("srsKapat").addEventListener("click", srsKapat);
+document.getElementById("srsGeri").addEventListener("click", srsGeriAl);
+document.getElementById("srsAskida").addEventListener("click", srsAskiya);
+document.getElementById("srsSes").addEventListener("click", () => { if (srsO.k) srsSes(srsO.k); });
+document.getElementById("srsYon").addEventListener("change", (e) => { srsYon = e.target.value; localStorage.setItem("srsYon", srsYon); });
+document.getElementById("srsYeniLimit").addEventListener("change", (e) => {
+  srsYeniLimit = Math.max(0, parseInt(e.target.value || "0", 10) || 0); localStorage.setItem("srsYeniLimit", String(srsYeniLimit)); srsBannerCiz();
+});
+document.getElementById("srsAskidaGeri").addEventListener("click", async () => {
+  const liste = kelimeler.filter(k => k.srs && k.srs.askida);
+  for (const k of liste){ const yeni = Object.assign({}, k.srs, {askida:false}); k.srs = yeni; try{ await updateDoc(doc(db, "kelimeler", k.id), {srs: yeni}); }catch(e){} }
+  srsBannerCiz();
+});
+document.addEventListener("keydown", (e) => {
+  if (!srsO.aktif || e.metaKey || e.ctrlKey || e.altKey) return;
+  const t = e.key.toLowerCase();
+  if (t === "escape"){ srsKapat(); return; }
+  if (!srsO.k){ if (t === "enter" || t === " ") srsKapat(); return; }
+  if (t === " " || t === "enter"){ e.preventDefault(); if (!srsO.goster){ srsO.goster = true; srsCiz(); } else srsCevapla(3); }
+  else if (srsO.goster && "1234".includes(t) && t.length === 1) srsCevapla(parseInt(t, 10));
+  else if (t === "z") srsGeriAl();
+  else if (t === "s") srsSes(srsO.k);
 });
 
 // ---- Pane switching (Takvim / İstatistikler / Checklist / Notlarım / Kelimeler) ----
